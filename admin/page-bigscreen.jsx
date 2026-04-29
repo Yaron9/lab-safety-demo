@@ -14,13 +14,12 @@ function BigScreenPage({ onOpenLab }) {
   const warnCount = labs.filter(l => l.status === 'warning').length;
   const normalCount = labs.filter(l => l.status === 'normal').length;
 
-  // 24h heatmap synthesis · 派生自教育部 8 大类 48 条
+  // 24h heatmap · 反算自 MOCK.labs[].hazardSources（CLAUDE.md 硬约束 #2）
+  // 规则：bs8ClassHeatmap 把 hazardSources 按 severity 权重散布到 7 weekday
   const heatRows = TAXONOMY_ORDER_8.map(k => RISK_TAXONOMY_8CLASS[k].short);
   const heatCols = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-  const seed = (i, j) => {
-    const v = ((i + 1) * 7 + (j + 1) * 3 + (i * j)) % 9;
-    return Math.max(0, v - 2);
-  };
+  const heatMatrix = bs8ClassHeatmap(labs);
+  const seed = (i, j) => heatMatrix[i][j];
 
   // distribution ring
   const total = normalCount + warnCount + rectifying;

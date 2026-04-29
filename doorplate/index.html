@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="door-display.css?v=6">
+<link rel="stylesheet" href="door-display.css?v=7">
 <style>
   body {
     margin: 0;
@@ -16,34 +16,35 @@
     color: rgba(255, 255, 255, 0.78);
   }
   .dd-stage { display: flex; flex-direction: column; align-items: center; padding: 18px 16px 60px; gap: 18px; }
+  /* toolbar = 仪表盘外壳（实色 navy + hairline 边框，不要 glass-morphism） */
   .dd-toolbar {
     width: 100%; max-width: 1040px;
     display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
     padding: 14px 18px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    background: #0f172a;
+    border: 1px solid #243049;
+    border-radius: 6px;
   }
-  .dd-toolbar h1 { font-size: 16px; margin: 0; color: #fff; font-weight: 600; }
-  .dd-toolbar .sub { font-size: 13px; color: rgba(255, 255, 255, 0.55); }
+  .dd-toolbar h1 { font-size: 16px; margin: 0; color: #e2e8f0; font-weight: 600; }
+  .dd-toolbar .sub { font-size: 13px; color: #94a3b8; }
   .dd-toolbar .sub .mono { font-family: "JetBrains Mono", monospace; letter-spacing: 0.08em; text-transform: uppercase; }
   .dd-scene-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
   .dd-scene-chips button {
-    padding: 7px 14px; border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.78);
-    border-radius: 6px; font-size: 12.5px; cursor: pointer;
-    font-family: inherit; transition: all 0.15s;
+    padding: 7px 14px; border: 1px solid #243049;
+    background: #131c34; color: #cbd5e1;
+    border-radius: 4px; font-size: 12.5px; cursor: pointer;
+    font-family: inherit; transition: border-color 0.15s, color 0.15s;
     display: flex; align-items: center; gap: 8px;
   }
-  .dd-scene-chips button:hover { border-color: rgba(255, 255, 255, 0.4); color: #fff; }
-  .dd-scene-chips button.active { background: #fff; color: #0b1428; border-color: #fff; font-weight: 600; }
-  .dd-scene-chips .chip-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .dd-scene-chips button:hover { border-color: #475569; color: #fff; }
+  .dd-scene-chips button.active { background: #e2e8f0; color: #0b1428; border-color: #e2e8f0; font-weight: 600; }
+  .dd-scene-chips .chip-dot { width: 10px; height: 10px; border-radius: 2px; }
   .dd-toggle {
-    padding: 7px 12px; border: 1px solid rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.78);
-    border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;
+    padding: 7px 12px; border: 1px solid #243049;
+    background: #131c34; color: #cbd5e1;
+    border-radius: 4px; font-size: 12px; cursor: pointer; font-family: inherit;
   }
-  .dd-toggle.on { background: rgba(201, 169, 97, 0.18); color: #c9a961; border-color: rgba(201, 169, 97, 0.55); }
+  .dd-toggle.on { background: #2a2418; color: #c9a961; border-color: #5e4f2c; }
   /* device frame */
   .dd-frame {
     width: calc(1080px * var(--dd-scale, 0.45));

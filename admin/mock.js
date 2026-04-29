@@ -592,6 +592,26 @@ function summarize8Class(labs) {
   return r;
 }
 
+/* === bs8ClassHeatmap · 8 大类 × 7 weekday 反算 ===========================
+ * bigscreen 大屏热图数据反算（CLAUDE.md 硬约束 #2 · 不许 hardcode 数值）。
+ * 规则：每条 hazardSource 按 severity 权重（critical=3 天 / warning=2 天 / info=1 天）
+ * 用 id hash 散布到对应 class8 行的 7 weekday。同 cell 数字 = 当日该大类的检测/留痕权重。
+ * ============================================================================ */
+function bs8ClassHeatmap(labs) {
+  const matrix = TAXONOMY_ORDER_8.map(() => new Array(7).fill(0));
+  (labs || []).forEach(l => (l.hazardSources || []).forEach(h => {
+    const rowIdx = TAXONOMY_ORDER_8.indexOf(class8Of(h));
+    if (rowIdx < 0) return;
+    const days = h.severity === 'critical' ? 3 : h.severity === 'warning' ? 2 : 1;
+    const seed = (h.id || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    for (let d = 0; d < days; d++) {
+      const colIdx = (seed + d * 3) % 7;
+      matrix[rowIdx][colIdx]++;
+    }
+  }));
+  return matrix;
+}
+
 window.MOCK = MOCK;
 window.EVENT_KIND_META = EVENT_KIND_META;
 window.EVENT_KINDS_ORDER = EVENT_KINDS_ORDER;
@@ -609,3 +629,4 @@ window.class8Of = class8Of;
 window.gradeOf = gradeOf;
 window.labGradeOf = labGradeOf;
 window.summarize8Class = summarize8Class;
+window.bs8ClassHeatmap = bs8ClassHeatmap;
