@@ -271,9 +271,9 @@ function HazardsPage() {
         <span className="muted mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>GRADE</span>
         {[
           { k: 'all', l: '全部' },
-          { k: 'I',   l: 'Ⅰ 级 · ' + countByGrade('I') },
-          { k: 'II',  l: 'Ⅱ 级 · ' + countByGrade('II') },
-          { k: 'III', l: 'Ⅲ 级 · ' + countByGrade('III') },
+          { k: 'I',   l: 'Ⅰ 级 高风险 · ' + countByGrade('I') + ' 项' },
+          { k: 'II',  l: 'Ⅱ 级 中风险 · ' + countByGrade('II') + ' 项' },
+          { k: 'III', l: 'Ⅲ 级 低风险 · ' + countByGrade('III') + ' 项' },
         ].map(f => (
           <button key={f.k} className={'pill ' + (grade === f.k ? 'active' : '')} onClick={() => setGrade(f.k)}>{f.l}</button>
         ))}
