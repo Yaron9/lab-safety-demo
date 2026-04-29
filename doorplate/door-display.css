@@ -650,6 +650,15 @@
   color: var(--ink-2);
   letter-spacing: 0.04em;
 }
+.dd-inspect-summary {
+  margin-top: 12px;
+  font-size: 26px;
+  color: var(--ink-2);
+  font-family: var(--font-num);
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+.dd-inspect-summary .num { color: var(--ink); font-weight: 700; }
 .dd-inspect-sub {
   margin-top: 10px;
   font-size: 22px;
@@ -667,6 +676,16 @@
 }
 .dd-inspect-row.sev-critical { background: var(--red-soft); border-color: rgba(220,38,38,0.25); }
 .dd-inspect-row.sev-warning  { background: var(--amber-soft); border-color: rgba(180,83,9,0.20); }
+/* CLASS-0X 政策大类 mono kicker · 教育部 8 大类 48 条（Swiss Railway / 工业仪表风） */
+.dd-inspect-class-kicker {
+  font-family: var(--font-num);
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
 .dd-inspect-row-h {
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 8px;
@@ -684,9 +703,9 @@
   font-weight: 600;
   letter-spacing: 0.05em;
 }
-.dd-inspect-sev.sev-critical { background: var(--red); color: #fff; }
+.dd-inspect-sev.sev-critical { background: var(--red);   color: #fff; }
 .dd-inspect-sev.sev-warning  { background: var(--amber); color: #fff; }
-.dd-inspect-sev.sev-info     { background: var(--ink-3); color: #fff; }
+.dd-inspect-sev.sev-info     { background: var(--green); color: #fff; }
 .dd-inspect-name {
   font-size: 36px;
   font-weight: 700;

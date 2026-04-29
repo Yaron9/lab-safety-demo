@@ -1,11 +1,12 @@
 /* ============================================================
-   危险源台账（反馈 3a）
+   危险源台账 · 接 8 大类 48 条政策（v2）
    ------------------------------------------------------------
-   8 间实验室约 22 条结构化危险源，按 kind / severity 筛选
-   - KPI 行：总数 / critical / 化学品 / 平均距上次检查天数
-   - filter：HAZARD_KINDS_ORDER 自动渲染（单一真相源）
-   - 表格 + 详情面板（PPE + 应急方案 + 关联实验室）
-   - 点击行 → 滑出 panel（复用 .panel/.panel-ov/.panel-h）
+   - 数据：MOCK.labs[].hazardSources[]，扁平化 + 反算 _cls8 / _grade
+   - filter：8 大类 pills（替换原 7-kind）+ 分级 Ⅰ/Ⅱ/Ⅲ pills
+   - KPI：在册数 / Ⅰ 级数 / 8 大类覆盖 K/8 / 平均距上次检查
+   - 表格：名称 · 类型(7-kind) · 8 大类 · 实验室 · 位置 · 分级 LED · PPE · 上次检查
+   - 详情：分级徽章 + CLASS-0X 徽章 + PPE + 应急 + 政策条款（hairline）
+   - 底部：8-CLASS POLICY DISTRIBUTION mini bar（hairline，不卡片）
    ============================================================ */
 
 const TODAY_HAZARD = new Date(MOCK.today || '2026-04-21');
@@ -13,6 +14,8 @@ const FLAT_HAZARDS = MOCK.labs.flatMap(l =>
   (l.hazardSources || []).map(h => ({
     ...h,
     labId: l.id, labName: l.name, labDept: l.dept, labLead: l.lead, labStatus: l.status,
+    _cls8: class8Of(h),
+    _grade: gradeOf(h),
   }))
 );
 
@@ -31,10 +34,44 @@ function HazardSeverityChip({ s }) {
   return <span className="chip chip-gray">一般</span>;
 }
 
+function Class8Chip({ k }) {
+  const m = RISK_TAXONOMY_8CLASS[k];
+  if (!m) return null;
+  return (
+    <span className="chip chip-gray" style={{ paddingLeft: 6, paddingRight: 8 }}>
+      <span className="mono" style={{ fontSize: 10, color: 'var(--ink-3)', marginRight: 6, letterSpacing: 0.5 }}>
+        CLASS-{String(m.no).padStart(2, '0')}
+      </span>
+      <span style={{ color: 'var(--ink)' }}>{m.short}</span>
+    </span>
+  );
+}
+
+function RiskGradeLed({ g }) {
+  const m = RISK_GRADE_META[g] || { color: 'var(--ink-3)', short: '·' };
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      <span style={{
+        display: 'inline-block', width: 10, height: 10,
+        background: m.color, borderRadius: 1,
+      }} />
+      <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{m.short}</span>
+    </span>
+  );
+}
+
+function RiskGradeChip({ g }) {
+  const m = RISK_GRADE_META[g];
+  if (!m) return null;
+  const cls = g === 'I' ? 'chip-red' : g === 'II' ? 'chip-amber' : 'chip-green';
+  return <span className={'chip ' + cls}>{m.label}</span>;
+}
+
 function HazardsKpi() {
   const total = FLAT_HAZARDS.length;
-  const critical = FLAT_HAZARDS.filter(h => h.severity === 'critical').length;
-  const chemical = FLAT_HAZARDS.filter(h => h.kind === 'chemical').length;
+  const gradeI = FLAT_HAZARDS.filter(h => h._grade === 'I').length;
+  const summary = summarize8Class(MOCK.labs);
+  const coverK = TAXONOMY_ORDER_8.filter(k => summary[k] > 0).length;
   const avgDays = Math.round(
     FLAT_HAZARDS.reduce((s, h) => s + (TODAY_HAZARD - new Date(h.lastCheck)) / 86400000, 0) / Math.max(total, 1)
   );
@@ -46,14 +83,16 @@ function HazardsKpi() {
         <div className="kpi-meta">覆盖 {MOCK.labs.filter(l => (l.hazardSources || []).length).length} 间实验室</div>
       </div>
       <div className="kpi">
-        <div className="kpi-label">严重等级</div>
-        <div className="kpi-value" style={{ color: 'var(--red)' }}>{critical}</div>
+        <div className="kpi-label">Ⅰ 级 · 高风险</div>
+        <div className="kpi-value" style={{ color: 'var(--red)' }}>{gradeI}</div>
         <div className="kpi-meta">需双锁 / 双人 / 应急预案</div>
       </div>
       <div className="kpi">
-        <div className="kpi-label">化学品类</div>
-        <div className="kpi-value" style={{ color: 'var(--amber)' }}>{chemical}</div>
-        <div className="kpi-meta">见危化品 · 资产 详情</div>
+        <div className="kpi-label">8 大类覆盖</div>
+        <div className="kpi-value">
+          {coverK}<span style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink-3)' }}> / 8</span>
+        </div>
+        <div className="kpi-meta">教育部试行清单基线</div>
       </div>
       <div className="kpi">
         <div className="kpi-label">平均距上次检查</div>
@@ -64,9 +103,31 @@ function HazardsKpi() {
   );
 }
 
+function PolicyItemList({ items }) {
+  return (
+    <div className="stack-l" style={{ gap: 14 }}>
+      {items.map(it => (
+        <div key={it.no} style={{ paddingBottom: 12, borderBottom: '1px solid var(--line-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 6 }}>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>{String(it.no).padStart(2, '0')}</span>
+            <strong style={{ fontSize: 13, color: 'var(--ink)' }}>{it.title}</strong>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.6, marginBottom: 6 }}>
+            {it.desc}
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.7 }}>
+            {it.actions.map((a, i) => <li key={i}>{a}</li>)}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function HazardPanel({ hz, onClose }) {
   if (!hz) return null;
-  const m = HAZARD_KIND_META[hz.kind] || {};
+  const cls8 = hz._cls8;
+  const cls8Meta = RISK_TAXONOMY_8CLASS[cls8];
   const days = Math.round((TODAY_HAZARD - new Date(hz.lastCheck)) / 86400000);
   return (
     <>
@@ -75,12 +136,13 @@ function HazardPanel({ hz, onClose }) {
         <div className="panel-h">
           <div>
             <div style={{ fontSize: 12, color: 'var(--ink-2)' }} className="mono">
-              {hz.id} · {m.label}
+              {hz.id}
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{hz.name}</div>
             <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: 'wrap' }}>
+              <RiskGradeChip g={hz._grade} />
+              <Class8Chip k={cls8} />
               <HazardKindChip k={hz.kind} />
-              <HazardSeverityChip s={hz.severity} />
               <span className="chip chip-brand">{hz.labId}</span>
             </div>
           </div>
@@ -130,6 +192,18 @@ function HazardPanel({ hz, onClose }) {
             </div>
           </div>
 
+          {cls8Meta && (
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--ink-3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+                政策依据 · {cls8Meta.label}（{cls8Meta.items.length} 条）
+              </div>
+              <div className="meta mono" style={{ fontSize: 11, marginBottom: 12 }}>
+                CLASS-{String(cls8Meta.no).padStart(2, '0')} · 教育部《高校实验室重要危险源主要风险清单（试行）》
+              </div>
+              <PolicyItemList items={cls8Meta.items} />
+            </div>
+          )}
+
           <div className="row" style={{ justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid var(--line)' }}>
             <button className="btn">导出条目</button>
             <button className="btn">登记复检</button>
@@ -141,19 +215,52 @@ function HazardPanel({ hz, onClose }) {
   );
 }
 
+function Class8SummaryBar({ summary }) {
+  const max = Math.max(1, ...Object.values(summary));
+  return (
+    <div style={{ marginTop: 12, padding: '14px 16px', background: '#fff', border: '1px solid var(--line)', borderRadius: 8 }}>
+      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
+        8-CLASS · POLICY DISTRIBUTION
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 10 }}>
+        {TAXONOMY_ORDER_8.map(k => {
+          const m = RISK_TAXONOMY_8CLASS[k];
+          const n = summary[k] || 0;
+          const h = Math.max(2, Math.round(n / max * 36));
+          return (
+            <div key={k} style={{ textAlign: 'left' }}>
+              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>CLASS-{String(m.no).padStart(2, '0')}</div>
+              <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: n === 0 ? 'var(--ink-3)' : 'var(--ink)' }}>{m.short}</div>
+              <div style={{ marginTop: 8, height: 36, display: 'flex', alignItems: 'flex-end' }}>
+                <div style={{
+                  width: '100%', height: h,
+                  background: n === 0 ? 'var(--line)' : 'var(--ink)',
+                  borderRadius: 1,
+                  opacity: n === 0 ? 0.5 : 1,
+                }} />
+              </div>
+              <div className="mono" style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: n === 0 ? 'var(--ink-3)' : 'var(--ink)' }}>{n}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function HazardsPage() {
-  const [kind, setKind] = React.useState('all');
-  const [sev, setSev] = React.useState('all');
+  const [cls, setCls] = React.useState('all');
+  const [grade, setGrade] = React.useState('all');
   const [open, setOpen] = React.useState(null);
 
   const list = FLAT_HAZARDS.filter(h => {
-    if (kind !== 'all' && h.kind !== kind) return false;
-    if (sev !== 'all' && h.severity !== sev) return false;
+    if (cls !== 'all' && h._cls8 !== cls) return false;
+    if (grade !== 'all' && h._grade !== grade) return false;
     return true;
   });
 
-  const countByKind = k => FLAT_HAZARDS.filter(h => h.kind === k).length;
-  const countBySev = s => FLAT_HAZARDS.filter(h => h.severity === s).length;
+  const summary = summarize8Class(MOCK.labs);
+  const countByGrade = g => FLAT_HAZARDS.filter(h => h._grade === g).length;
 
   return (
     <div>
@@ -161,7 +268,7 @@ function HazardsPage() {
         <div>
           <div className="page-title">危险源台账</div>
           <div className="page-sub">
-            按结构化条目登记每间实验室的具体危险源 · 含 PPE 配置、应急处置、上次检查 — 检查与门牌均从此处取数
+            按教育部 8 大类 48 条对每间实验室危险源结构化登记 · 含 PPE、应急、上次检查 — 三端共用此数据
           </div>
         </div>
         <div className="row">
@@ -173,29 +280,36 @@ function HazardsPage() {
       <HazardsKpi />
 
       <div className="filters">
-        <span className="muted" style={{ fontSize: 12 }}>类型</span>
-        <button className={'pill ' + (kind === 'all' ? 'active' : '')} onClick={() => setKind('all')}>全部 · {FLAT_HAZARDS.length}</button>
-        {HAZARD_KINDS_ORDER.map(k => {
-          const m = HAZARD_KIND_META[k];
-          const n = countByKind(k);
-          if (n === 0) return null;
+        <span className="muted mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>8-CLASS</span>
+        <button className={'pill ' + (cls === 'all' ? 'active' : '')} onClick={() => setCls('all')}>
+          全部 · {FLAT_HAZARDS.length}
+        </button>
+        {TAXONOMY_ORDER_8.map(k => {
+          const m = RISK_TAXONOMY_8CLASS[k];
+          const n = summary[k] || 0;
           return (
-            <button key={k} className={'pill ' + (kind === k ? 'active' : '')} onClick={() => setKind(k)}>
-              {m.icon} {m.label} · {n}
+            <button key={k}
+              className={'pill ' + (cls === k ? 'active' : '')}
+              onClick={() => setCls(k)}
+              style={n === 0 ? { opacity: 0.45 } : null}>
+              <span className="mono" style={{ marginRight: 4, fontSize: 11, color: cls === k ? '#fff' : 'var(--ink-3)' }}>0{m.no}</span>
+              {m.short} · {n}
             </button>
           );
         })}
-        <span style={{ width: 1, height: 18, background: 'var(--line)', margin: '0 4px' }}></span>
-        <span className="muted" style={{ fontSize: 12 }}>严重度</span>
-        {[
-          { k: 'all',     l: '全部' },
-          { k: 'critical', l: '严重 · ' + countBySev('critical') },
-          { k: 'warning',  l: '关注 · ' + countBySev('warning') },
-          { k: 'info',     l: '一般 · ' + countBySev('info') },
-        ].map(f => (
-          <button key={f.k} className={'pill ' + (sev === f.k ? 'active' : '')} onClick={() => setSev(f.k)}>{f.l}</button>
-        ))}
         <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--ink-2)' }}>共 {list.length} 项</span>
+      </div>
+
+      <div className="filters">
+        <span className="muted mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>GRADE</span>
+        {[
+          { k: 'all', l: '全部' },
+          { k: 'I',   l: 'Ⅰ 级 · ' + countByGrade('I') },
+          { k: 'II',  l: 'Ⅱ 级 · ' + countByGrade('II') },
+          { k: 'III', l: 'Ⅲ 级 · ' + countByGrade('III') },
+        ].map(f => (
+          <button key={f.k} className={'pill ' + (grade === f.k ? 'active' : '')} onClick={() => setGrade(f.k)}>{f.l}</button>
+        ))}
       </div>
 
       <div className="card" style={{ overflow: 'hidden' }}>
@@ -203,10 +317,11 @@ function HazardsPage() {
           <thead>
             <tr>
               <th>名称 / 编号</th>
-              <th>类型</th>
+              <th style={{ width: 100 }}>类型</th>
+              <th style={{ width: 150 }}>8 大类</th>
               <th>所属实验室</th>
               <th>位置</th>
-              <th>严重度</th>
+              <th style={{ width: 70 }}>分级</th>
               <th>PPE</th>
               <th style={{ width: 100 }}>上次检查</th>
             </tr>
@@ -219,12 +334,13 @@ function HazardsPage() {
                   <div className="meta mono" style={{ fontSize: 11 }}>{h.id}</div>
                 </td>
                 <td><HazardKindChip k={h.kind} /></td>
+                <td><Class8Chip k={h._cls8} /></td>
                 <td>
                   <span className="chip chip-brand">{h.labId}</span>
                   <div className="meta" style={{ fontSize: 11, marginTop: 2 }}>{h.labName}</div>
                 </td>
                 <td className="mono" style={{ fontSize: 12 }}>{h.location}</td>
-                <td><HazardSeverityChip s={h.severity} /></td>
+                <td><RiskGradeLed g={h._grade} /></td>
                 <td>
                   <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
                     {(h.ppe || []).slice(0, 2).map(p => <span key={p} className="chip chip-gray" style={{ fontSize: 10 }}>{p}</span>)}
@@ -241,6 +357,8 @@ function HazardsPage() {
         )}
       </div>
 
+      <Class8SummaryBar summary={summary} />
+
       {open && <HazardPanel hz={open} onClose={() => setOpen(null)} />}
     </div>
   );
@@ -249,3 +367,6 @@ function HazardsPage() {
 window.HazardsPage = HazardsPage;
 window.HazardKindChip = HazardKindChip;
 window.HazardSeverityChip = HazardSeverityChip;
+window.RiskGradeLed = RiskGradeLed;
+window.RiskGradeChip = RiskGradeChip;
+window.Class8Chip = Class8Chip;

@@ -14,8 +14,8 @@ function BigScreenPage({ onOpenLab }) {
   const warnCount = labs.filter(l => l.status === 'warning').length;
   const normalCount = labs.filter(l => l.status === 'normal').length;
 
-  // 24h heatmap synthesis for hazard-type violations
-  const heatRows = ['火灾', '爆炸', '中毒', '腐蚀', '辐射', '高压', '机械'];
+  // 24h heatmap synthesis · 派生自教育部 8 大类 48 条
+  const heatRows = TAXONOMY_ORDER_8.map(k => RISK_TAXONOMY_8CLASS[k].short);
   const heatCols = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   const seed = (i, j) => {
     const v = ((i + 1) * 7 + (j + 1) * 3 + (i * j)) % 9;
@@ -78,6 +78,10 @@ function BigScreenPage({ onOpenLab }) {
 
           <BsCard title="院系安全积分排行" hint="按 lab 平均分">
             <RankList rows={deptRows} />
+          </BsCard>
+
+          <BsCard title="8 大类风险分布 · 近 7 日" hint="教育部试行清单 · 48 条">
+            <HazardHeatmap rows={heatRows} cols={heatCols} seed={seed} />
           </BsCard>
         </div>
 

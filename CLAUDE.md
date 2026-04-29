@@ -7,6 +7,7 @@
 
 - @.impeccable.md — design context（品牌、调性、anti-references）
 - @README.md — 三端 URL + 各端能力清单（也是甲方拿到的版本说明）
+- @docs/risk-taxonomy-future.md — 后期可填报版本的方案（demo 内只做只读）
 - `/Users/yaron/.claude/projects/-Users-yaron-AGI-lab-safety-demo/memory/MEMORY.md` — 累积的用户反馈和偏好
 
 ## 三端结构
