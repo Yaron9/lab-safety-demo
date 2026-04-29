@@ -62,7 +62,7 @@
 
 ### 与现有数据模型的衔接
 
-- **保存即生成 hazardSource 条目** — 走的是同一个 `hazardSources[]` schema，新增字段 `class8` / `riskGrade` / `count` 已就位（v2 plan 落地）
+- **保存即生成 hazardSource 条目** — 走的是同一个 `hazardSources[]` schema。Demo 已就位字段：`class8`（8 大类 key）。生产版本待加字段：`riskGrade`（HSE 工程评估给出的 Ⅰ/Ⅱ/Ⅲ）/ `count`（数量）/ `selfInspection`（自检文本）/ `disposal`（处置方案）/ `photos[]` / `signedBy`
 - **events 联动** — 整改流程 reuse `EVENT_KIND_META.rectify` / `unattended` 等
 - **大屏热图** — `summarize8Class()` 会自动把新登记的项目算进去，无需额外计算
 
