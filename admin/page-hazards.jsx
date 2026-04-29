@@ -215,39 +215,6 @@ function HazardPanel({ hz, onClose }) {
   );
 }
 
-function Class8SummaryBar({ summary }) {
-  const max = Math.max(1, ...Object.values(summary));
-  return (
-    <div style={{ marginTop: 12, padding: '14px 16px', background: '#fff', border: '1px solid var(--line)', borderRadius: 8 }}>
-      <div className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12 }}>
-        8-CLASS · POLICY DISTRIBUTION
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 10 }}>
-        {TAXONOMY_ORDER_8.map(k => {
-          const m = RISK_TAXONOMY_8CLASS[k];
-          const n = summary[k] || 0;
-          const h = Math.max(2, Math.round(n / max * 36));
-          return (
-            <div key={k} style={{ textAlign: 'left' }}>
-              <div className="mono" style={{ fontSize: 10, color: 'var(--ink-3)' }}>CLASS-{String(m.no).padStart(2, '0')}</div>
-              <div style={{ fontSize: 12, fontWeight: 600, marginTop: 2, color: n === 0 ? 'var(--ink-3)' : 'var(--ink)' }}>{m.short}</div>
-              <div style={{ marginTop: 8, height: 36, display: 'flex', alignItems: 'flex-end' }}>
-                <div style={{
-                  width: '100%', height: h,
-                  background: n === 0 ? 'var(--line)' : 'var(--ink)',
-                  borderRadius: 1,
-                  opacity: n === 0 ? 0.5 : 1,
-                }} />
-              </div>
-              <div className="mono" style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: n === 0 ? 'var(--ink-3)' : 'var(--ink)' }}>{n}</div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function HazardsPage() {
   const [cls, setCls] = React.useState('all');
   const [grade, setGrade] = React.useState('all');
@@ -356,8 +323,6 @@ function HazardsPage() {
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)' }}>暂无匹配的危险源</div>
         )}
       </div>
-
-      <Class8SummaryBar summary={summary} />
 
       {open && <HazardPanel hz={open} onClose={() => setOpen(null)} />}
     </div>
