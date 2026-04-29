@@ -709,7 +709,7 @@
 }
 .dd-inspect-sev.sev-critical { background: var(--red);   color: #fff; }
 .dd-inspect-sev.sev-warning  { background: var(--amber); color: #fff; }
-.dd-inspect-sev.sev-info     { background: var(--green); color: #fff; }
+.dd-inspect-sev.sev-info     { background: var(--ink-3); color: #fff; }
 .dd-inspect-name {
   font-size: 32px;
   font-weight: 700;

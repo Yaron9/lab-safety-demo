@@ -328,14 +328,6 @@ const KIND_TO_CLASS = {
   mechanical: 'oper',
 };
 
-/* === RISK_GRADE_META · 风险分级 Ⅰ/Ⅱ/Ⅲ（政策语言） + severity 一一对应 ===== */
-const SEV_TO_GRADE = { critical: 'I', warning: 'II', info: 'III' };
-const RISK_GRADE_META = {
-  I:   { label: 'Ⅰ 级', short: 'Ⅰ', color: 'var(--red)',   desc: '高风险' },
-  II:  { label: 'Ⅱ 级', short: 'Ⅱ', color: 'var(--amber)', desc: '中风险' },
-  III: { label: 'Ⅲ 级', short: 'Ⅲ', color: 'var(--green)', desc: '低风险' },
-};
-
 /* === PROJECT_STATUS_META / PROJECT_RISK_META · 实验项目元数据 ============== */
 const PROJECT_STATUS_META = {
   draft:           { label: '草稿',     color: 'var(--ink-3)', chipCls: 'chip-gray' },
@@ -577,13 +569,6 @@ const MOCK = {
 
 /* === 8-class 反算 helper（policy taxonomy 唯一计算入口） ============== */
 function class8Of(hz) { return (hz && hz.class8) || (hz && KIND_TO_CLASS[hz.kind]) || 'oper'; }
-function gradeOf(hz)  { return (hz && hz.riskGrade) || (hz && SEV_TO_GRADE[hz.severity]) || 'III'; }
-function labGradeOf(lab) {
-  const grades = ((lab && lab.hazardSources) || []).map(gradeOf);
-  if (grades.includes('I')) return 'I';
-  if (grades.includes('II')) return 'II';
-  return 'III';
-}
 function summarize8Class(labs) {
   const r = Object.fromEntries(TAXONOMY_ORDER_8.map(k => [k, 0]));
   (labs || []).forEach(l => ((l.hazardSources) || []).forEach(h => {
@@ -623,10 +608,6 @@ window.PROJECT_RISK_META = PROJECT_RISK_META;
 window.RISK_TAXONOMY_8CLASS = RISK_TAXONOMY_8CLASS;
 window.TAXONOMY_ORDER_8 = TAXONOMY_ORDER_8;
 window.KIND_TO_CLASS = KIND_TO_CLASS;
-window.SEV_TO_GRADE = SEV_TO_GRADE;
-window.RISK_GRADE_META = RISK_GRADE_META;
 window.class8Of = class8Of;
-window.gradeOf = gradeOf;
-window.labGradeOf = labGradeOf;
 window.summarize8Class = summarize8Class;
 window.bs8ClassHeatmap = bs8ClassHeatmap;

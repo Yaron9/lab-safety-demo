@@ -1,12 +1,10 @@
 /* ============================================================
-   危险源台账 · 接 8 大类 48 条政策（v2）
+   危险源台账 · 接 8 大类 48 条政策（v3 · 删除无依据的 Ⅰ/Ⅱ/Ⅲ 分级换皮）
    ------------------------------------------------------------
-   - 数据：MOCK.labs[].hazardSources[]，扁平化 + 反算 _cls8 / _grade
-   - filter：8 大类 pills（替换原 7-kind）+ 分级 Ⅰ/Ⅱ/Ⅲ pills
-   - KPI：在册数 / Ⅰ 级数 / 8 大类覆盖 K/8 / 平均距上次检查
-   - 表格：名称 · 类型(7-kind) · 8 大类 · 实验室 · 位置 · 分级 LED · PPE · 上次检查
-   - 详情：分级徽章 + CLASS-0X 徽章 + PPE + 应急 + 政策条款（hairline）
-   - 底部：8-CLASS POLICY DISTRIBUTION mini bar（hairline，不卡片）
+   - 8 大类：教育部 docx 框架，filter / 列 / 政策依据三处呈现
+   - severity（critical/warning/info）：demo 工程语言，"严重/关注/一般"
+   - 不做分级换皮：教育部文件没给 Ⅰ/Ⅱ/Ⅲ 判定标准，xlsx 模板里那栏是
+     填报员手填字段，不是从 critical 自动推；要做就在生产版本由 HSE 评估
    ============================================================ */
 
 const TODAY_HAZARD = new Date(MOCK.today || '2026-04-21');
@@ -15,7 +13,6 @@ const FLAT_HAZARDS = MOCK.labs.flatMap(l =>
     ...h,
     labId: l.id, labName: l.name, labDept: l.dept, labLead: l.lead, labStatus: l.status,
     _cls8: class8Of(h),
-    _grade: gradeOf(h),
   }))
 );
 
@@ -47,29 +44,9 @@ function Class8Chip({ k }) {
   );
 }
 
-function RiskGradeLed({ g }) {
-  const m = RISK_GRADE_META[g] || { color: 'var(--ink-3)', short: '·' };
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-      <span style={{
-        display: 'inline-block', width: 10, height: 10,
-        background: m.color, borderRadius: 1,
-      }} />
-      <span className="mono" style={{ fontSize: 12, fontWeight: 600 }}>{m.short}</span>
-    </span>
-  );
-}
-
-function RiskGradeChip({ g }) {
-  const m = RISK_GRADE_META[g];
-  if (!m) return null;
-  const cls = g === 'I' ? 'chip-red' : g === 'II' ? 'chip-amber' : 'chip-green';
-  return <span className={'chip ' + cls}>{m.label}</span>;
-}
-
 function HazardsKpi() {
   const total = FLAT_HAZARDS.length;
-  const gradeI = FLAT_HAZARDS.filter(h => h._grade === 'I').length;
+  const critical = FLAT_HAZARDS.filter(h => h.severity === 'critical').length;
   const summary = summarize8Class(MOCK.labs);
   const coverK = TAXONOMY_ORDER_8.filter(k => summary[k] > 0).length;
   const avgDays = Math.round(
@@ -83,8 +60,8 @@ function HazardsKpi() {
         <div className="kpi-meta">覆盖 {MOCK.labs.filter(l => (l.hazardSources || []).length).length} 间实验室</div>
       </div>
       <div className="kpi">
-        <div className="kpi-label">Ⅰ 级 · 高风险</div>
-        <div className="kpi-value" style={{ color: 'var(--red)' }}>{gradeI}</div>
+        <div className="kpi-label">严重等级</div>
+        <div className="kpi-value" style={{ color: 'var(--red)' }}>{critical}</div>
         <div className="kpi-meta">需双锁 / 双人 / 应急预案</div>
       </div>
       <div className="kpi">
@@ -140,7 +117,7 @@ function HazardPanel({ hz, onClose }) {
             </div>
             <div style={{ fontSize: 22, fontWeight: 700, marginTop: 2 }}>{hz.name}</div>
             <div className="row" style={{ marginTop: 8, gap: 6, flexWrap: 'wrap' }}>
-              <RiskGradeChip g={hz._grade} />
+              <HazardSeverityChip s={hz.severity} />
               <Class8Chip k={cls8} />
               <HazardKindChip k={hz.kind} />
               <span className="chip chip-brand">{hz.labId}</span>
@@ -217,17 +194,17 @@ function HazardPanel({ hz, onClose }) {
 
 function HazardsPage() {
   const [cls, setCls] = React.useState('all');
-  const [grade, setGrade] = React.useState('all');
+  const [sev, setSev] = React.useState('all');
   const [open, setOpen] = React.useState(null);
 
   const list = FLAT_HAZARDS.filter(h => {
     if (cls !== 'all' && h._cls8 !== cls) return false;
-    if (grade !== 'all' && h._grade !== grade) return false;
+    if (sev !== 'all' && h.severity !== sev) return false;
     return true;
   });
 
   const summary = summarize8Class(MOCK.labs);
-  const countByGrade = g => FLAT_HAZARDS.filter(h => h._grade === g).length;
+  const countBySev = s => FLAT_HAZARDS.filter(h => h.severity === s).length;
 
   return (
     <div>
@@ -268,14 +245,14 @@ function HazardsPage() {
       </div>
 
       <div className="filters">
-        <span className="muted mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>GRADE</span>
+        <span className="muted mono" style={{ fontSize: 11, letterSpacing: 1, textTransform: 'uppercase' }}>严重度</span>
         {[
-          { k: 'all', l: '全部' },
-          { k: 'I',   l: 'Ⅰ 级 高风险 · ' + countByGrade('I') + ' 项' },
-          { k: 'II',  l: 'Ⅱ 级 中风险 · ' + countByGrade('II') + ' 项' },
-          { k: 'III', l: 'Ⅲ 级 低风险 · ' + countByGrade('III') + ' 项' },
+          { k: 'all',     l: '全部' },
+          { k: 'critical', l: '严重 · ' + countBySev('critical') + ' 项' },
+          { k: 'warning',  l: '关注 · ' + countBySev('warning') + ' 项' },
+          { k: 'info',     l: '一般 · ' + countBySev('info') + ' 项' },
         ].map(f => (
-          <button key={f.k} className={'pill ' + (grade === f.k ? 'active' : '')} onClick={() => setGrade(f.k)}>{f.l}</button>
+          <button key={f.k} className={'pill ' + (sev === f.k ? 'active' : '')} onClick={() => setSev(f.k)}>{f.l}</button>
         ))}
       </div>
 
@@ -288,7 +265,7 @@ function HazardsPage() {
               <th style={{ width: 150 }}>8 大类</th>
               <th>所属实验室</th>
               <th>位置</th>
-              <th style={{ width: 70 }}>分级</th>
+              <th style={{ width: 80 }}>严重度</th>
               <th>PPE</th>
               <th style={{ width: 100 }}>上次检查</th>
             </tr>
@@ -307,7 +284,7 @@ function HazardsPage() {
                   <div className="meta" style={{ fontSize: 11, marginTop: 2 }}>{h.labName}</div>
                 </td>
                 <td className="mono" style={{ fontSize: 12 }}>{h.location}</td>
-                <td><RiskGradeLed g={h._grade} /></td>
+                <td><HazardSeverityChip s={h.severity} /></td>
                 <td>
                   <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
                     {(h.ppe || []).slice(0, 2).map(p => <span key={p} className="chip chip-gray" style={{ fontSize: 10 }}>{p}</span>)}
@@ -332,6 +309,4 @@ function HazardsPage() {
 window.HazardsPage = HazardsPage;
 window.HazardKindChip = HazardKindChip;
 window.HazardSeverityChip = HazardSeverityChip;
-window.RiskGradeLed = RiskGradeLed;
-window.RiskGradeChip = RiskGradeChip;
 window.Class8Chip = Class8Chip;

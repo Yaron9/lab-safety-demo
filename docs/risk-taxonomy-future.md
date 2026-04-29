@@ -4,11 +4,19 @@
 
 本 demo 已吸收教育部《高校实验室重要危险源主要风险清单（试行）》8 大类 48 条政策字典，作为只读演示数据嵌入：
 
-- **字典层**：`admin/mock.js` · `RISK_TAXONOMY_8CLASS` + `KIND_TO_CLASS` + `RISK_GRADE_META` + helpers（`class8Of` / `gradeOf` / `labGradeOf` / `summarize8Class`）
-- **扩展字段**：`hazardSources[].class8` / `hazardSources[].riskGrade`（向后兼容，可选）
+- **字典层**：`admin/mock.js` · `RISK_TAXONOMY_8CLASS` + `KIND_TO_CLASS` + helpers（`class8Of` / `summarize8Class` / `bs8ClassHeatmap`）
+- **扩展字段**：`hazardSources[].class8`（向后兼容，可选；未填时用 KIND_TO_CLASS 推断）
 - **三端反算**：admin 危险源台账 / bigscreen 热图 / doorplate 巡查模式 全部从同一字典派生
 
 **Demo 边界**：所有数据 mock，所有 dept/student 名虚构，无后端。台账只读、不能新增/修改/删除条目。
+
+### 关于"风险分级 Ⅰ/Ⅱ/Ⅲ"为何不在 demo 内做
+
+教育部 docx 的 48 条只描述「8 大类各自有什么风险类型、应该怎么应对」，**完全没有给"Ⅰ/Ⅱ/Ⅲ 级"的判定标准**。xlsx 模板里那栏「风险分级」是给填报人手填的工程评估字段，不是从 severity (critical/warning/info) 自动推。
+
+早期版本曾把 demo 已有的 severity 字段一一映射成 Ⅰ/Ⅱ/Ⅲ 显示在 UI 上，后续判定为"无依据的政策语言换皮"已删除。Demo 里"严重/关注/一般"三档 severity 是工程语言，不与政策分级混淆。
+
+正式运维版本里，Ⅰ/Ⅱ/Ⅲ 应作为表单字段 + 工程评估流程产出（见下方"表单字段"段）。
 
 ---
 

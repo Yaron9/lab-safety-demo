@@ -6,7 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="door-display.css?v=7">
+<link rel="stylesheet" href="door-display.css?v=8">
 <style>
   body {
     margin: 0;
@@ -297,17 +297,13 @@ const KIND_TO_CLASS_8 = {
   chemical: 'chem', gas: 'gas', biological: 'bio', radiation: 'rad',
   physical: 'heat', electrical: 'oper', mechanical: 'oper',
 };
-const SEV_TO_GRADE_8 = { critical: 'I', warning: 'II', info: 'III' };
-const GRADE_LABEL = { I: 'Ⅰ 级', II: 'Ⅱ 级', III: 'Ⅲ 级' };
+const SEV_LABEL = { critical: '严重', warning: '关注', info: '一般' };
 
 function classOf8(h) { return h.class8 || KIND_TO_CLASS_8[h.kind] || 'oper'; }
-function gradeOf8(h) { return h.riskGrade || SEV_TO_GRADE_8[h.severity] || 'III'; }
 
 function InspectMode() {
   const list = LAB.hazardSources || [];
-  const grades = list.map(gradeOf8);
-  const gradeICount = grades.filter(g => g === 'I').length;
-  const maxGrade = grades.includes('I') ? 'Ⅰ' : grades.includes('II') ? 'Ⅱ' : 'Ⅲ';
+  const critCount = list.filter(h => h.severity === 'critical').length;
   const classes = new Set(list.map(classOf8));
   return (
     <div className="dd-inspect">
@@ -316,7 +312,7 @@ function InspectMode() {
           <span>危险源台账 · 现场检查</span>
         </div>
         <div className="dd-inspect-summary">
-          <span className="num">{list.length}</span> 项 · 涉 <span className="num">{classes.size}</span> 大类 · 最高 <span className="num">{maxGrade}</span> 级 · 高风险 <span className="num">{gradeICount}</span> 项
+          <span className="num">{list.length}</span> 项 · 涉 <span className="num">{classes.size}</span> 大类 · 严重 <span className="num">{critCount}</span> 项
         </div>
         <div className="dd-inspect-sub">
           上次检查 <span className="num">{list[0]?.lastCheck || '—'}</span> · 检查人 {list[0]?.checker || '—'}
@@ -325,7 +321,6 @@ function InspectMode() {
       <div className="dd-inspect-list">
         {list.map(h => {
           const cls = classOf8(h);
-          const grade = gradeOf8(h);
           return (
             <div key={h.id} className={'dd-inspect-row sev-' + h.severity}>
               <div className="dd-inspect-class-kicker">
@@ -334,7 +329,7 @@ function InspectMode() {
               <div className="dd-inspect-row-h">
                 <span className="dd-inspect-kind">{HAZARD_KIND_ICON[h.kind] || '·'} {HAZARD_KIND_LABEL[h.kind] || h.kind}</span>
                 <span className={'dd-inspect-sev sev-' + h.severity}>
-                  {GRADE_LABEL[grade]}
+                  {SEV_LABEL[h.severity] || h.severity}
                 </span>
               </div>
               <div className="dd-inspect-name">{h.name}</div>
