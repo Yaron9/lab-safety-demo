@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>实验室电子门牌 · 1080×1920</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="door-display.css?v=8">
+<style>
+  body {
+    margin: 0;
+    background: #0b1428;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .dd-kiosk-stage {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+  .dd-kiosk-frame {
+    width: var(--dd-kiosk-width);
+    height: var(--dd-kiosk-height);
+    overflow: hidden;
+    flex: 0 0 auto;
+  }
+  .dd-kiosk-frame .dd-root {
+    transform: scale(var(--dd-kiosk-scale));
+    transform-origin: top left;
+  }
+  .dd-kiosk-hotspot {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 30;
+    width: 148px;
+    height: 148px;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: default;
+  }
+  .dd-kiosk-panel {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 40;
+    width: min(440px, calc(100vw - 36px));
+    padding: 14px;
+    background: rgba(11, 20, 40, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+    backdrop-filter: blur(12px);
+  }
+  .dd-kiosk-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .dd-kiosk-panel-close {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 18px;
+    line-height: 1;
+  }
+  .dd-kiosk-scene-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .dd-kiosk-scene {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.84);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+  }
+  .dd-kiosk-scene.active {
+    background: #ffffff;
+    color: #0b1428;
+    border-color: #ffffff;
+    font-weight: 700;
+  }
+  .dd-kiosk-scene-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+  .dd-kiosk-sleep {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: default;
+  }
+  .dd-stage { display: flex; flex-direction: column; align-items: center; padding: 18px 16px 60px; gap: 18px; }
+  .dd-toolbar {
+    width: 100%; max-width: 1040px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    padding: 14px 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+  }
+  .dd-toolbar h1 { font-size: 16px; margin: 0; color: #fff; font-weight: 600; }
+  .dd-toolbar .sub { font-size: 13px; color: rgba(255, 255, 255, 0.55); }
+  .dd-toolbar .sub .mono { font-family: "JetBrains Mono", monospace; letter-spacing: 0.08em; text-transform: uppercase; }
+  .dd-scene-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+  .dd-scene-chips button {
+    padding: 7px 14px; border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.78);
+    border-radius: 6px; font-size: 12.5px; cursor: pointer;
+    font-family: inherit; transition: all 0.15s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .dd-scene-chips button:hover { border-color: rgba(255, 255, 255, 0.4); color: #fff; }
+  .dd-scene-chips button.active { background: #fff; color: #0b1428; border-color: #fff; font-weight: 600; }
+  .dd-scene-chips .chip-dot { width: 10px; height: 10px; border-radius: 3px; }
+  .dd-toggle {
+    padding: 7px 12px; border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.04); color: rgba(255, 255, 255, 0.78);
+    border-radius: 6px; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  .dd-toggle.on { background: rgba(201, 169, 97, 0.18); color: #c9a961; border-color: rgba(201, 169, 97, 0.55); }
+  /* device frame */
+  .dd-frame {
+    width: calc(1080px * var(--dd-scale, 0.45));
+    height: calc(1920px * var(--dd-scale, 0.45));
+    position: relative;
+    border-radius: 24px;
+    box-shadow:
+      0 30px 80px -10px rgba(0, 0, 0, 0.7),
+      0 0 0 5px #0b2348,
+      0 0 0 7px #1e293b;
+    overflow: hidden;
+  }
+  .dd-frame .dd-root { transform: scale(var(--dd-scale, 0.45)); transform-origin: top left; }
+  .dd-frame::after {
+    content: ""; position: absolute; bottom: -3px; left: 50%;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.7);
+    transform: translateX(-50%);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="vendor/babel.min.js"></script>
+<script src="lib/scoring-rules.js?v=8"></script>
+
+<script type="text/babel">
+// ============================================================
+// 电子门牌 · 仅展示关键信息
+// 借 Gemini 的字号 / 留白 / 圆角节奏 + 我的 8 状态架构
+// ============================================================
+
+const LAB = {
+  id: '302',
+  name: '电化学与储能材料实验室',
+  dept: '材料化学系',
+  lead: '周建国',                                      // 实验室管理员（系级专人）· 教师不挂此职
+  today: '2026-04-21',                                  // 与 admin MOCK.today / mp MP.today 单一基准
+  hazards: ['腐蚀', '火灾', '爆炸', '中毒', '高压'],
+  contacts: [
+    { role: '管理员', name: '周建国', phone: '·· 6602' },
+    { role: '安全员', name: '王玉鸿', phone: '·· 6688' },
+  ],
+  // 反馈 7 · 巡查模式（SCENES.inspect）展开的结构化危险源清单
+  // 与 admin/MOCK.labs[302].hazardSources 同 schema · 演示时 URL ?mode=inspect 进入
+  hazardSources: [
+    { id: 'hs-302-01', kind: 'chemical', name: '浓硫酸 1 L', location: '危化柜 #1',
+      severity: 'critical', ppe: ['丁腈手套', '防护面屏', '耐酸围裙'],
+      emergency: '大量清水冲洗 ≥ 15min · 立即就医（一级洗眼器在门口右侧）',
+      lastCheck: '2026-04-15', checker: '王玉鸿' },
+    { id: 'hs-302-02', kind: 'chemical', name: '锂金属箔 50 g', location: '手套箱配套柜',
+      severity: 'critical', ppe: ['丁腈手套', '防护眼镜', '阻燃实验服'],
+      emergency: '严禁遇水 · D 类金属火灾用石墨粉扑灭，禁用水/CO₂',
+      lastCheck: '2026-04-12', checker: '王玉鸿' },
+    { id: 'hs-302-03', kind: 'electrical', name: '电化学工作站 CHI760E', location: '工位 3',
+      severity: 'warning', ppe: ['绝缘鞋'],
+      emergency: '断电 → 隔离 · 切勿触碰输出端子（最高 ±10V / 1A）',
+      lastCheck: '2026-04-10', checker: '王玉鸿' },
+  ],
+  // 当前在跑的高风险项目（用于 SCENES.high 数据驱动 banner）
+  // riskLevel === 'high' 时门牌切到 high 状态显示项目名 + 涉及危险源 + 预计结束
+  // 项目结束后置空（或 riskLevel 改为 medium/low），banner 自动回落兜底文案
+  activeProject: {
+    id: 'proj-2026-01',
+    name: '钠离子电池正极材料 · 高温烧结合成',
+    riskLevel: 'high',
+    advisor: '赵振华',
+    estimatedEnd: '今日 16:30',
+    hazardSources: ['浓硫酸', '锂金属', '管式炉 800°C'],
+  },
+};
+
+// SCENES.high 的 notice 由 LAB.activeProject 数据驱动，避免写死「高温烧结 800°C」文案
+function buildHighNotice(lab) {
+  const ap = lab.activeProject;
+  if (!ap || ap.riskLevel !== 'high') {
+    return { tone: 'red', ico: '!', text: '高风险作业进行中 · 严禁无关人员进入' };
+  }
+  const sources = (ap.hazardSources || []).join(' · ');
+  const tail = ap.estimatedEnd ? ` · 预计 ${ap.estimatedEnd} 结束` : '';
+  return { tone: 'red', ico: '!', text: `${ap.name}${sources ? ' · ' + sources : ''}${tail}` };
+}
+
+const PRESENCE = [
+  { name: '陈延松', role: '导师', gold: true },
+  { name: '李思远', role: '研23' },
+  { name: '张一凡', role: '研24' },
+];
+
+// 关停场景的累积扣分清单 · 复用 admin lab 410 的扣分组合（共 60 分恰触发关停档）
+// notice 文案与 labViolations 同源 → SCENES.rect 引用一次，notice 反算 SCORING.tally 不漂移
+const RECT_VIOLATIONS = [
+  { ruleIds: ['hazard-7'] }, { ruleIds: ['hazard-9'] }, { ruleIds: ['hazard-1'] },
+  { ruleIds: ['mgmt-3'] },   { ruleIds: ['env-2'] },    { ruleIds: ['hazard-5'] },
+  { ruleIds: ['ppe-4'] },    { ruleIds: ['hazard-6'] },
+];
+
+// === 8 SCENES ===
+const SCENES = [
+  {
+    k: 'free', label: '空闲开放', state: 'free', chipDot: '#15803d',
+    statusLabel: '空闲开放',
+    temp: 22.4, humidity: 52, labViolations: [],
+    presence: [],
+    notice: { tone: 'green', ico: '✓', text: '当前可预约进入 · 14:00 起 张一凡 等 3 人有预约' },
+    qr: 'idle', cam: 'idle',
+    safetyTag: { tone: 'green', label: '安全状态 · 正常' },
+  },
+  {
+    k: 'busy', label: '使用中', state: 'busy', chipDot: '#1e5eb5',
+    statusLabel: '使用中',
+    temp: 23.1, humidity: 48, labViolations: [],
+    presence: PRESENCE,
+    notice: { tone: 'blue', ico: 'i', text: '实验进行中 · 14:00 - 17:00 · 入内请穿戴实验服与护目镜' },
+    qr: 'idle', cam: 'idle',
+    safetyTag: { tone: 'green', label: '安全状态 · 正常' },
+  },
+  {
+    k: 'high', label: '高风险作业', state: 'crit', chipDot: '#dc2626',
+    statusLabel: '高风险项目进行中',
+    temp: 36.8, humidity: 42, tempAlert: true, labViolations: [],
+    presence: PRESENCE.slice(0, 2),
+    notice: buildHighNotice(LAB),
+    qr: 'disabled', cam: 'idle', haztape: true,
+    safetyTag: { tone: 'amber', label: '安全状态 · 关注' },
+  },
+  {
+    k: 'rect', label: '整改中 (停用)', state: 'crit', chipDot: '#dc2626',
+    statusLabel: '整改中 · 已停用',
+    temp: 22.0, humidity: 50,
+    labViolations: RECT_VIOLATIONS, // = 60 分 → 关停整改（同源单一引用）
+    presence: [],
+    notice: { tone: 'red', ico: '!',
+              text: '安全状态：累积 ' + SCORING.tally(RECT_VIOLATIONS) + ' 分 / ' + SCORING.PERIOD_LIMITS.lab + ' 触发关停 · 04-28 前完成整改后方可恢复运行' },
+    qr: 'disabled', cam: 'idle', haztape: true, qrStamp: '整改',
+    safetyTag: { tone: 'red', label: '安全状态 · 整改' },
+  },
+  {
+    k: 'closed', label: '关闭维护', state: 'off', chipDot: '#64748b',
+    statusLabel: '关闭维护',
+    temp: 21.0, humidity: 50, labViolations: [],
+    presence: [],
+    notice: { tone: 'gray', ico: '⏻', text: '通风系统检修中 · 预计 04-29 09:00 恢复 · 请勿强行进入' },
+    qr: 'disabled', cam: 'idle',
+    safetyTag: { tone: 'gray', label: '安全状态 · 计划停机' },
+  },
+  {
+    k: 'scan', label: '扫码识别', state: 'busy', chipDot: '#b45309',
+    statusLabel: '识别中',
+    temp: 23.1, humidity: 48, labViolations: [],
+    presence: PRESENCE,
+    notice: { tone: 'amber', ico: '?', text: '识别中 · 请正对摄像头 · 张一凡（研24 · 已预约）正在核验' },
+    qr: 'scanning', cam: 'scanning',
+    safetyTag: { tone: 'green', label: '安全状态 · 正常' },
+  },
+  {
+    k: 'success', label: '识别成功', state: 'busy', chipDot: '#15803d',
+    statusLabel: '使用中',
+    temp: 23.1, humidity: 48, labViolations: [],
+    presence: PRESENCE,
+    notice: { tone: 'blue', ico: 'i', text: '实验进行中 · 14:00 - 17:00' },
+    qr: 'idle', cam: 'idle', overlay: 'success',
+    safetyTag: { tone: 'green', label: '安全状态 · 正常' },
+  },
+  {
+    k: 'fail', label: '识别失败', state: 'busy', chipDot: '#dc2626',
+    statusLabel: '使用中',
+    temp: 23.1, humidity: 48, labViolations: [],
+    presence: PRESENCE,
+    notice: { tone: 'blue', ico: 'i', text: '实验进行中 · 14:00 - 17:00' },
+    qr: 'idle', cam: 'err', overlay: 'fail',
+    safetyTag: { tone: 'green', label: '安全状态 · 正常' },
+  },
+  {
+    k: 'alert', label: '紧急事件', state: 'crit', chipDot: '#c9a961',
+    statusLabel: '紧急事件',
+    temp: 28.3, humidity: 60, tempAlert: true, labViolations: [],
+    presence: PRESENCE.slice(0, 2),
+    notice: { tone: 'red', ico: '!', text: '紧急事件 · 请勿靠近 · 14:32 检测到高浓度 VOC · 安全员已派出' },
+    qr: 'disabled', cam: 'err', haztape: true, alert: true,
+    safetyTag: { tone: 'red', label: '安全状态 · 紧急' },
+  },
+  // 反馈 7 · 巡查模式：URL ?mode=inspect 触发；展开 lab.hazardSources 完整清单
+  {
+    k: 'inspect', label: '检查模式', state: 'busy', chipDot: '#1e5eb5',
+    statusLabel: '检查模式 · 王玉鸿',
+    temp: 22.2, humidity: 58, labViolations: [],
+    presence: [{ name: '王玉鸿', role: '实验室管理员', gold: true }],
+    notice: { tone: 'blue', ico: 'i', text: '实验室管理员现场检查中 · 危险源逐项核对 · 上次检查 04-15' },
+    qr: 'disabled', cam: 'idle',
+    safetyTag: { tone: 'blue', label: '检查模式' },
+    inspectMode: true,   // 主区切换到 InspectMode 组件
+  },
+];
+
+// ============================================================
+// HEADER
+// ============================================================
+function Header({ scene, time, date }) {
+  return (
+    <header className="dd-header">
+      <div className="dd-header-top">
+        <div className="dd-lab-id">
+          <span className="id-prefix">D-</span>
+          {LAB.id}
+        </div>
+        <div className="dd-header-status">
+          <div className="dd-status">
+            <span className="dot"></span>
+            {scene.statusLabel}
+          </div>
+          {scene.safetyTag && (
+            <div className={'dd-safety-tag tone-' + scene.safetyTag.tone}>
+              {scene.safetyTag.label}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="dd-lab-name">{LAB.name}</div>
+      <div className="dd-lab-meta">
+        <span>{LAB.dept}</span>
+        <span className="clock">{time.slice(0,5)}<span className="sec">:{time.slice(6)}</span></span>
+      </div>
+      <div className="dd-contact-row">
+        {LAB.contacts.map((c, i) => (
+          <div key={i} className="dd-contact-pill">
+            <span className="role">{c.role}</span>
+            <span className="name">{c.name}</span>
+            <span className="phone">📞 {c.phone}</span>
+          </div>
+        ))}
+      </div>
+    </header>
+  );
+}
+
+// ============================================================
+// INSPECT MODE · 反馈 7 · 巡查员展开危险源完整清单
+// 触发：URL ?mode=inspect 或 NAV「检查模式」按钮
+// 数据：LAB.hazardSources（与 admin/MOCK 同 schema · kind/severity/ppe/emergency/lastCheck）
+// ============================================================
+const HAZARD_KIND_LABEL = {
+  chemical: '化学品', physical: '物理', biological: '生物',
+  radiation: '辐射', mechanical: '机械', electrical: '电气', gas: '气体',
+};
+const HAZARD_KIND_ICON = {
+  chemical: '🧪', physical: '🔥', biological: '🧫',
+  radiation: '☢', mechanical: '⚙', electrical: '⚡', gas: '💨',
+};
+
+function InspectMode() {
+  const list = LAB.hazardSources || [];
+  const critical = list.filter(h => h.severity === 'critical').length;
+  return (
+    <div className="dd-inspect">
+      <div className="dd-inspect-head">
+        <div className="dd-sec-title">
+          <span>危险源台账 · 现场检查</span>
+          <span className="dd-inspect-meta">{list.length} 项 · 严重 {critical} 项</span>
+        </div>
+        <div className="dd-inspect-sub">
+          上次检查 <span className="num">{list[0]?.lastCheck || '—'}</span> · 检查人 {list[0]?.checker || '—'}
+        </div>
+      </div>
+      <div className="dd-inspect-list">
+        {list.map(h => (
+          <div key={h.id} className={'dd-inspect-row sev-' + h.severity}>
+            <div className="dd-inspect-row-h">
+              <span className="dd-inspect-kind">{HAZARD_KIND_ICON[h.kind] || '·'} {HAZARD_KIND_LABEL[h.kind] || h.kind}</span>
+              <span className={'dd-inspect-sev sev-' + h.severity}>
+                {h.severity === 'critical' ? '严重' : h.severity === 'warning' ? '关注' : '一般'}
+              </span>
+            </div>
+            <div className="dd-inspect-name">{h.name}</div>
+            <div className="dd-inspect-loc">📍 {h.location} · 上次检查 {h.lastCheck}</div>
+            <div className="dd-inspect-ppe">
+              <span className="dd-inspect-tag-label">PPE</span>
+              {h.ppe.map(p => <span key={p} className="dd-inspect-ppe-chip">{p}</span>)}
+            </div>
+            <div className="dd-inspect-emergency">
+              <span className="dd-inspect-tag-label">应急</span>
+              <span>{h.emergency}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// MAIN  ·  hazards / KPIs / presence
+// ============================================================
+function Hazards() {
+  return (
+    <div className="dd-card">
+      <div className="dd-sec-title">
+        <span>危险类别</span>
+      </div>
+      <div className="dd-hazards">
+        {LAB.hazards.map(h => (
+          <span key={h} className="dd-haz-tag">⚠ {h}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KPIs({ scene }) {
+  return (
+    <div className="dd-kpis">
+      <div className="dd-kpi">
+        <div className="dd-kpi-label">温度</div>
+        <div className={'dd-kpi-value' + (scene.tempAlert ? ' alert' : '')}>
+          <span className="num">{scene.temp.toFixed(1)}</span>
+          <span className="unit">°C</span>
+        </div>
+      </div>
+      <div className="dd-kpi">
+        <div className="dd-kpi-label">湿度</div>
+        <div className="dd-kpi-value">
+          <span className="num">{scene.humidity}</span>
+          <span className="unit">%</span>
+        </div>
+      </div>
+      <div className="dd-kpi">
+        <div className="dd-kpi-label">本周期扣分</div>
+        {(() => {
+          const pts = SCORING.tally(scene.labViolations);
+          const v = SCORING.verdict(pts, 'lab');
+          // 颜色映射倒过来：累积扣分越高越红（与旧 100 分制相反）
+          const cls = v.tier === 'rectifying' ? 'score-bad' : v.tier === 'warning' ? 'score-warn' : 'score-good';
+          return (
+            <div className={'dd-kpi-value ' + cls}>
+              <span className="num">{pts}</span>
+              <span className="unit">/{SCORING.PERIOD_LIMITS.lab}</span>
+            </div>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+function Presence({ scene }) {
+  return (
+    <div className="dd-card flex-grow">
+      <div className="dd-sec-title">
+        <span>当前在室人员</span>
+        <span className="dd-people-count">{scene.presence.length} 人</span>
+      </div>
+      <div className="dd-people-list">
+        {scene.presence.length === 0 ? (
+          <div className="dd-people-empty">
+            {scene.k === 'closed' ? '本时段无人员进出 · 实验室处于维护' : '本时段暂无人员在场'}
+          </div>
+        ) : scene.presence.map((p, i) => (
+          <div key={i} className={'dd-person' + (p.gold ? ' gold' : '')}>
+            <div className="av">{p.name[0]}</div>
+            <div className="info">
+              <div className="name">{p.name}</div>
+              <div className="role">{p.role}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// QR (seeded SVG)
+// ============================================================
+function buildQR(seed = 314159, n = 25) {
+  const mods = new Uint8Array(n * n);
+  let s = seed;
+  const rnd = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  for (let i = 0; i < n * n; i++) mods[i] = rnd() < 0.45 ? 1 : 0;
+  const set = (r, c, w, h, v) => {
+    for (let dr = 0; dr < h; dr++) for (let dc = 0; dc < w; dc++) {
+      const rr = r + dr, cc = c + dc;
+      if (rr >= 0 && cc >= 0 && rr < n && cc < n) mods[rr * n + cc] = v;
+    }
+  };
+  const finder = (r, c) => { set(r, c, 7, 7, 1); set(r + 1, c + 1, 5, 5, 0); set(r + 2, c + 2, 3, 3, 1); };
+  finder(0, 0); finder(0, n - 7); finder(n - 7, 0);
+  set(7, 0, 1, 8, 0); set(0, 7, 8, 1, 0);
+  set(7, n - 8, 1, 8, 0); set(0, n - 8, 8, 1, 0);
+  set(n - 8, 0, 1, 8, 0); set(n - 8, 7, 8, 1, 0);
+  set(n - 9, n - 9, 5, 5, 1); set(n - 8, n - 8, 3, 3, 0); set(n - 7, n - 7, 1, 1, 1);
+  for (let i = 8; i < n - 8; i++) {
+    mods[6 * n + i] = (i % 2 === 0) ? 1 : 0;
+    mods[i * n + 6] = (i % 2 === 0) ? 1 : 0;
+  }
+  return { mods, n };
+}
+const QR = buildQR();
+function QRCode() {
+  const { mods, n } = QR;
+  const cells = [];
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      if (mods[r * n + c]) {
+        cells.push(<rect key={r * n + c} x={c} y={r} width="1" height="1" fill="#0b2348" />);
+      }
+    }
+  }
+  return <svg viewBox={`0 0 ${n} ${n}`} shapeRendering="crispEdges">{cells}</svg>;
+}
+
+// ============================================================
+// CAMERA
+// ============================================================
+function FaceMesh() {
+  const pts = [
+    [50, 28], [38, 32], [62, 32],
+    [42, 42], [58, 42], [50, 50],
+    [44, 60], [50, 62], [56, 60],
+    [32, 48], [68, 48],
+    [40, 70], [50, 72], [60, 70],
+  ];
+  return (
+    <svg className="dd-cam-mesh" viewBox="0 0 100 100" preserveAspectRatio="none"
+         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+      {pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="0.9" />)}
+      {[[0,1],[0,2],[3,4],[3,9],[4,10],[5,7],[6,7],[7,8],[11,12],[12,13]].map(([a, b], i) => {
+        const A = pts[a], B = pts[b];
+        return <line key={'l'+i} x1={A[0]} y1={A[1]} x2={B[0]} y2={B[1]} strokeWidth="0.4" />;
+      })}
+    </svg>
+  );
+}
+
+function Camera({ state }) {
+  const cls = 'dd-cam' + (state === 'scanning' ? ' scanning' : state === 'err' ? ' err' : '');
+  return (
+    <div className={cls}>
+      <svg className="feed" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <radialGradient id="camBg" cx="50%" cy="40%" r="65%">
+            <stop offset="0%" stopColor="#3a445e" />
+            <stop offset="65%" stopColor="#151a28" />
+            <stop offset="100%" stopColor="#050a14" />
+          </radialGradient>
+        </defs>
+        <rect width="100" height="100" fill="url(#camBg)" />
+        <ellipse cx="50" cy="45" rx="22" ry="28" fill="#202738" />
+        <path d="M 28 75 C 28 65 38 62 50 62 C 62 62 72 65 72 75 L 72 100 L 28 100 Z" fill="#181d2c" />
+      </svg>
+      <span className="dd-cam-bracket tl"></span>
+      <span className="dd-cam-bracket tr"></span>
+      <span className="dd-cam-bracket bl"></span>
+      <span className="dd-cam-bracket br"></span>
+      {state === 'scanning' && <FaceMesh />}
+      {state === 'scanning' && <div className="dd-cam-scan" />}
+    </div>
+  );
+}
+
+// ============================================================
+// FOOTER
+// ============================================================
+function Footer({ scene }) {
+  // 本周期累积扣分 + PDF 6 月周期 label · 由 SCORING 派生（与三端共享 lib）
+  const pts = SCORING.tally(scene.labViolations);
+  const v = SCORING.verdict(pts, 'lab');
+  return (
+    <footer className="dd-footer">
+      {/* 仪表带：克制的 mono 一行，传达"这块屏跟三端联动" */}
+      <div className={'dd-period-bar tier-' + v.tier}>
+        <span className="lbl">PERIOD POINTS</span>
+        <span className="num">{pts}<span className="ceil">/{SCORING.PERIOD_LIMITS.lab}</span></span>
+        <span className="dot" />
+        <span className="prd">{SCORING.formatPeriod(LAB.today)}</span>
+      </div>
+      <div className="dd-footer-row">
+        <div className={'dd-notice tone-' + scene.notice.tone}>
+          <div className="ico">{scene.notice.ico}</div>
+          <div className="text">{scene.notice.text}</div>
+        </div>
+        <div className="dd-entry">
+          <div className="dd-entry-tile">
+            <div className={'dd-qr ' + (scene.qr === 'disabled' ? 'disabled' : scene.qr === 'scanning' ? 'scanning' : '')}>
+              <QRCode />
+              {scene.qr === 'disabled' && (
+                <div className="dd-qr-stamp">{scene.qrStamp || (scene.k === 'closed' ? 'OFFLINE' : '禁入')}</div>
+              )}
+            </div>
+            <div className="cap">{scene.qr === 'disabled' ? '门禁已锁' : '扫码进门'}</div>
+          </div>
+          <div className="dd-entry-tile">
+            <Camera state={scene.cam} />
+            <div className="cap">{scene.cam === 'scanning' ? '识别中' : scene.cam === 'err' ? '识别失败' : '人脸核验'}</div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ============================================================
+// OVERLAYS
+// ============================================================
+function SuccessOverlay() {
+  return (
+    <div className="dd-overlay success">
+      <div className="ring">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M5 12.5 L 10 17.5 L 19 7.5" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="title">欢迎，张一凡</div>
+      <div className="sub">门禁已开启 · 实验时段 14:00 - 17:00 · 请佩戴防护装备</div>
+      <div className="checks">
+        <div><div className="k">IDENTITY</div><div className="v">学生 · 材料研24</div></div>
+        <div><div className="k">RESERVATION</div><div className="v">通风柜 1 · ✓</div></div>
+        <div><div className="k">TRAINING</div><div className="v">有效 · ✓</div></div>
+        <div><div className="k">LIVENESS</div><div className="v">通过 · ✓</div></div>
+      </div>
+      <div className="countdown">3 SEC · AUTO RETURN</div>
+    </div>
+  );
+}
+
+function FailOverlay() {
+  return (
+    <div className="dd-overlay fail">
+      <div className="ring">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M6 6 L 18 18 M 18 6 L 6 18" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div className="title">身份核验未通过</div>
+      <div className="sub">人脸与已扫码身份不匹配 · 请联系实验室管理员或安全员</div>
+      <div className="checks">
+        <div><div className="k">SCAN ID</div><div className="v">张一凡 · 材料研24</div></div>
+        <div><div className="k">FACE MATCH</div><div className="v">41% · BELOW 75%</div></div>
+        <div><div className="k">ATTEMPTS</div><div className="v">3 / 3</div></div>
+        <div><div className="k">CONTACT</div><div className="v">王玉鸿 ·· 6688</div></div>
+      </div>
+      <div className="countdown">5 SEC · AUTO RETURN · LOGGED</div>
+    </div>
+  );
+}
+
+// ============================================================
+// MAIN COMPOSITION
+// ============================================================
+function DoorDisplay({ scene }) {
+  const [t, setT] = React.useState(new Date());
+  React.useEffect(() => {
+    const id = setInterval(() => setT(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const pad = n => String(n).padStart(2, '0');
+  const time = `${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+  const wd = ['SUN','MON','TUE','WED','THU','FRI','SAT'][t.getDay()];
+  const date = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())} · ${wd}`;
+
+  return (
+    <div className="dd-root" data-state={scene.state}>
+      {scene.haztape && <div className={'dd-haztape' + (scene.alert ? ' flash' : '')} />}
+      <Header scene={scene} time={time} date={date} />
+      <main className="dd-main">
+        {scene.inspectMode ? (
+          <InspectMode />
+        ) : (
+          <>
+            <Hazards />
+            <KPIs scene={scene} />
+            <Presence scene={scene} />
+          </>
+        )}
+      </main>
+      <Footer scene={scene} />
+      {scene.haztape && <div className={'dd-haztape' + (scene.alert ? ' flash' : '')} />}
+      {scene.overlay === 'success' && <SuccessOverlay />}
+      {scene.overlay === 'fail' && <FailOverlay />}
+    </div>
+  );
+}
+
+// ============================================================
+// APP / TOOLBAR / SCALE
+// ============================================================
+function App() {
+  // URL ?mode=inspect 优先（巡查员卡刷/扫码进入检查模式）
+  // URL 触发的会话不写 localStorage，避免巡查模式「粘住」下次访问
+  const params = new URLSearchParams(location.search);
+  const urlInspect = params.get('mode') === 'inspect';
+  const urlScene = params.get('scene');
+  const validScene = key => SCENES.some(s => s.k === key);
+  const getInitialSceneKey = () => {
+    if (urlInspect) return 'inspect';
+    if (validScene(urlScene)) return urlScene;
+    const stored = localStorage.getItem('dd-scene');
+    return validScene(stored) ? stored : 'busy';
+  };
+  const [sceneKey, setSceneKey] = React.useState(getInitialSceneKey);
+  const [panelOpen, setPanelOpen] = React.useState(false);
+  const [tapCount, setTapCount] = React.useState(0);
+  const [screenSleeping, setScreenSleeping] = React.useState(false);
+  const [kioskFit, setKioskFit] = React.useState({ scale: 1, width: 1080, height: 1920 });
+  const tapTimerRef = React.useRef(null);
+  const panelTimerRef = React.useRef(null);
+  const idleTimerRef = React.useRef(null);
+  const screenSleepingRef = React.useRef(false);
+  const kioskScene = SCENES.find(s => s.k === sceneKey) || SCENES[0];
+
+  const callDoorplateBridge = method => {
+    const bridge = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.DoorplateBridge;
+    if (!bridge || typeof bridge[method] !== 'function') return;
+    bridge[method]().catch(err => console.warn('DoorplateBridge.' + method + ' failed', err));
+  };
+
+  const enterSleep = () => {
+    screenSleepingRef.current = true;
+    setPanelOpen(false);
+    setTapCount(0);
+    setScreenSleeping(true);
+    callDoorplateBridge('sleep');
+  };
+
+  const resetIdleTimer = () => {
+    window.clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = window.setTimeout(enterSleep, 60000);
+  };
+
+  const wakeFromSleep = () => {
+    if (screenSleepingRef.current) {
+      screenSleepingRef.current = false;
+      setScreenSleeping(false);
+      callDoorplateBridge('wake');
+    }
+    resetIdleTimer();
+  };
+
+  const noteActivity = () => {
+    if (screenSleepingRef.current) {
+      wakeFromSleep();
+      return;
+    }
+    resetIdleTimer();
+  };
+
+  React.useEffect(() => {
+    if (urlInspect) return;
+    localStorage.setItem('dd-scene', sceneKey);
+  }, [sceneKey, urlInspect]);
+
+  React.useEffect(() => {
+    const activityEvents = ['pointerdown', 'touchstart', 'mousemove', 'keydown'];
+    activityEvents.forEach(type => window.addEventListener(type, noteActivity, { passive: true }));
+    resetIdleTimer();
+    return () => {
+      activityEvents.forEach(type => window.removeEventListener(type, noteActivity));
+      window.clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (!panelOpen) return;
+    window.clearTimeout(panelTimerRef.current);
+    panelTimerRef.current = window.setTimeout(() => setPanelOpen(false), 8000);
+    return () => window.clearTimeout(panelTimerRef.current);
+  }, [panelOpen, sceneKey]);
+
+  React.useEffect(() => {
+    return () => {
+      window.clearTimeout(tapTimerRef.current);
+      window.clearTimeout(panelTimerRef.current);
+      window.clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  const registerHiddenTap = () => {
+    noteActivity();
+    window.clearTimeout(tapTimerRef.current);
+    setTapCount(count => {
+      const next = count + 1;
+      if (next >= 5) {
+        setPanelOpen(true);
+        return 0;
+      }
+      tapTimerRef.current = window.setTimeout(() => setTapCount(0), 1200);
+      return next;
+    });
+  };
+
+  const chooseScene = key => {
+    if (!validScene(key)) return;
+    noteActivity();
+    setSceneKey(key);
+    if (!urlInspect) localStorage.setItem('dd-scene', key);
+    setPanelOpen(false);
+    setTapCount(0);
+  };
+
+  React.useEffect(() => {
+    const fitToViewport = () => {
+      const scale = Math.min(window.innerWidth / 1080, window.innerHeight / 1920);
+      setKioskFit({
+        scale,
+        width: 1080 * scale,
+        height: 1920 * scale,
+      });
+    };
+    fitToViewport();
+    window.addEventListener('resize', fitToViewport);
+    window.addEventListener('orientationchange', fitToViewport);
+    return () => {
+      window.removeEventListener('resize', fitToViewport);
+      window.removeEventListener('orientationchange', fitToViewport);
+    };
+  }, []);
+
+  return (
+    <div
+      className="dd-kiosk-stage"
+      style={{
+        '--dd-kiosk-scale': kioskFit.scale,
+        '--dd-kiosk-width': `${kioskFit.width}px`,
+        '--dd-kiosk-height': `${kioskFit.height}px`,
+      }}
+    >
+      <div className="dd-kiosk-frame">
+        <DoorDisplay scene={kioskScene} />
+      </div>
+      <button
+        className="dd-kiosk-hotspot"
+        aria-label="open scene controls"
+        onClick={registerHiddenTap}
+      />
+      {panelOpen && (
+        <div className="dd-kiosk-panel">
+          <div className="dd-kiosk-panel-head">
+            <span>APK DEMO STATE</span>
+            <button
+              className="dd-kiosk-panel-close"
+              aria-label="close scene controls"
+              onClick={() => setPanelOpen(false)}
+            >
+              x
+            </button>
+          </div>
+          <div className="dd-kiosk-scene-grid">
+            {SCENES.map(s => (
+              <button
+                key={s.k}
+                className={'dd-kiosk-scene' + (s.k === sceneKey ? ' active' : '')}
+                onClick={() => chooseScene(s.k)}
+              >
+                <span className="dd-kiosk-scene-dot" style={{ background: s.chipDot }}></span>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {screenSleeping && (
+        <button
+          className="dd-kiosk-sleep"
+          aria-label="wake doorplate screen"
+          onPointerDown={wakeFromSleep}
+          onTouchStart={wakeFromSleep}
+          onClick={wakeFromSleep}
+        />
+      )}
+    </div>
+  );
+
+  /*
+  const [sceneKey, setSceneKey] = React.useState(() =>
+    urlInspect ? 'inspect' : (localStorage.getItem('dd-scene') || 'busy')
+  );
+  const [autoplay, setAutoplay] = React.useState(false);
+  const [scale, setScale] = React.useState(0.45);
+
+  React.useEffect(() => {
+    // URL 触发的 inspect 会话不持久化（避免巡查员离开后下次访问仍停在巡查模式）
+    if (urlInspect && sceneKey === 'inspect') return;
+    localStorage.setItem('dd-scene', sceneKey);
+  }, [sceneKey]);
+
+  React.useEffect(() => {
+    const fit = () => {
+      const avail = window.innerHeight - 200;
+      const byH = avail / 1920;
+      const byW = (window.innerWidth - 60) / 1080;
+      const s = Math.max(0.28, Math.min(0.6, Math.min(byH, byW)));
+      setScale(s);
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
+
+  React.useEffect(() => {
+    if (!autoplay) return;
+    // 自动轮播仅在前 9 个状态间循环，inspect（第 10 个）需手动触发
+    const cycleScenes = SCENES.filter(s => !s.inspectMode);
+    const id = setInterval(() => {
+      setSceneKey(k => {
+        const i = cycleScenes.findIndex(s => s.k === k);
+        if (i === -1) return cycleScenes[0].k;
+        return cycleScenes[(i + 1) % cycleScenes.length].k;
+      });
+    }, 5000);
+    return () => clearInterval(id);
+  }, [autoplay]);
+
+  const scene = SCENES.find(s => s.k === sceneKey) || SCENES[0];
+
+  return (
+    <div className="dd-stage" style={{ '--dd-scale': scale }}>
+      <div className="dd-toolbar">
+        <h1>实验室电子门牌</h1>
+        <span className="sub">Android 一体机 · <span className="mono">1080×1920 · {Math.round(scale * 100)}%</span></span>
+        <div className="dd-scene-chips">
+          {SCENES.map(s => (
+            <button key={s.k}
+              className={s.k === sceneKey ? 'active' : ''}
+              onClick={() => { setAutoplay(false); setSceneKey(s.k); }}>
+              <span className="chip-dot" style={{ background: s.chipDot }}></span>
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <button className={'dd-toggle' + (autoplay ? ' on' : '')} onClick={() => setAutoplay(v => !v)}>
+          {autoplay ? '⏸ 暂停轮播' : '▶ 自动轮播 5s'}
+        </button>
+      </div>
+      <div className="dd-frame">
+        <DoorDisplay scene={scene} />
+      </div>
+    </div>
+  );
+  */
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

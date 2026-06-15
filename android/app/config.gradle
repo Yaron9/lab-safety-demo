@@ -1,0 +1,32 @@
+ext {
+    sign = [
+            file         : 'system_key.jks',
+            storePassword: 'hik12345',
+            keyAlias     : 'system_key',
+            keyPassword  : 'hik12345'
+    ]
+
+    config = [
+            compileSdk : 30,
+            applicationId : "com.hik.vis.demo",
+            minSdk : 25,
+            targetSdk : 30,
+            versionCode : 1,
+            versionName : "1.0.0"
+    ]
+
+    versions = [
+            appcompat : '1.2.0',
+            gson : '2.8.6',
+            xstream : '1.4.15'
+    ]
+
+    dependency = [
+            appcompat : "androidx.appcompat:appcompat:${versions.appcompat}",
+            gson : "com.google.code.gson:gson:${versions.gson}",
+            // xstream
+            xstream :"com.thoughtworks.xstream:xstream:${versions.xstream}"
+    ]
+
+
+}

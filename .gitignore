@@ -6,6 +6,22 @@ node_modules/
 .claude/
 .tmp/
 
+# Android / Capacitor local build outputs
+android/.gradle/
+android/**/build/
+android/local.properties
+android/.idea/
+android/*.iml
+*.apk
+*.aab
+
+# Android signing materials (never commit keys or local signing config)
+*.jks
+*.keystore
+*.pk8
+*.x509.pem
+signing.properties
+
 # Tencent Cloud EdgeOne (本地 CLI 副产物，不进仓库)
 .env
 .edgeone/
