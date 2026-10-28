@@ -86,6 +86,7 @@ APK 打包补充：
 
 - 根目录 `package.json` / `capacitor.config.json` 管理 Capacitor。
 - `www/` 是 APK Web 资源目录，不要在 `/doorplate/` 下运行 Capacitor。
+- `www/door-display.css`、`www/lib/scoring-rules.js` 是**拷贝**：改完源头（`doorplate/`、`lib/`）跑 `npm run sync:web`；`npm run check:web`（即 `npm test`）校对两边共享 JSX 段是否漂移。
 - 同步 Android 资源：`npx cap sync android`。
 - 构建与调试：用 Android Studio 打开 `android/` 后 Run / Build APK。
 - 命令行构建需 JDK 21；JDK 17 太低，JDK 25 对当前 Gradle / Android Gradle Plugin 组合过新。

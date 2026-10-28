@@ -8,7 +8,9 @@
     "lib": "lib"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "sync:web": "node scripts/sync-www.mjs",
+    "check:web": "node scripts/sync-www.mjs --check",
+    "test": "node scripts/sync-www.mjs --check"
   },
   "repository": {
     "type": "git",
