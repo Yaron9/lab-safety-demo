@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply from: "config.gradle"
 
 android {
     namespace = "cn.edu.cugb.materials.doorplate"
