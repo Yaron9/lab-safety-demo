@@ -16,10 +16,14 @@
 | `/` | **Portal 导航页**（三端入口） | `index.html`（纯 HTML/CSS，无 JS，~240 行 inline style，按 `.impeccable.md` 调性） |
 | `/admin/` | Web 管理控制台 | `admin/index.html` + `admin/page-*.jsx` + `admin/shell.jsx` + `admin/styles.css` + `admin/mock.js` |
 | `/mp-demo/` | 微信小程序（H5 模拟，不上微信审核） | `mp-demo/index.html` + `mp-demo/page-*.jsx` + `mp-demo/components.jsx` + `mp-demo/styles.css` |
-| `/doorplate/` | 电子门牌（1080×1920 竖屏 kiosk） | `doorplate/index.html` + `doorplate/door-display.css`（独立目录，10 状态切换 · 含 `?mode=inspect`） |
+| `/doorplate/` | 电子门牌（1080×1920 竖屏 kiosk）· **浏览器预览/验收** | `doorplate/index.html` + `doorplate/door-display.css`（独立目录，10 状态切换 · 含 `?mode=inspect`） |
+| `/www/` | 电子门牌 · **APK 专用入口**（Capacitor `webDir`） | `www/index.html`（全屏 kiosk，无工具栏）+ `www/door-display.css` + `www/lib/scoring-rules.js` + `www/vendor/`（本地 React/Babel） |
+| `/android/` | Capacitor Android 工程（打 APK 用） | `android/app/src/main/java/.../DoorplateBridgePlugin.java`（原生亮度 sleep/wake 桥） |
 | `/lib/` | **三端共享单一来源** | `lib/scoring-rules.js`（IIFE 暴露 `window.SCORING`：5 类 40 条规则 + tally/verdict/currentPeriod 等纯函数 + localStorage 持久化） |
 
 `admin/mock.js` 是 admin 唯一数据源；`mp-demo/mock.js` 是小程序自己的；门牌的 LAB/SCENES 内联在 `doorplate/index.html` 里。三端 `today` 必须同步到 `'2026-04-21'`（已是当前基准）。
+
+电子门牌两个入口的分工：`doorplate/index.html` 是带工具栏 + 自动轮播的浏览器验收页；`www/index.html` 是同一套 `DoorDisplay` 的全屏 kiosk 变体（右上角 5 连击唤出 10 状态面板，60s 无操作调 `DoorplateBridge.sleep()` 降亮度）。**`www/door-display.css`、`www/lib/scoring-rules.js` 是拷贝，不是新源**——改完源文件跑 `npm run sync:web` 同步，不要手改 www 里的副本。
 
 > Portal 存在的原因：给甲方一个永久唯一入口最干净，省得记 4 个 URL。三端 cookie 落到同一域名后任意切换都不重新认证。
 
@@ -69,6 +73,21 @@ cd /Users/yaron/AGI/lab-safety-demo && \
 ```
 
 输出末尾的 `EDGEONE_DEPLOY_URL=https://lab-safety-demo-XXXXXXXX.edgeone.cool?eo_token=...&eo_time=...` 是 3 小时窗口的备用链接。
+
+### 电子门牌 APK（Capacitor）
+
+`/doorplate/` 和 `/www/` 是同一套门牌的两种壳；APK 只打门牌端，不含 admin / mp-demo。
+
+```sh
+npm install                 # 首次；React/Babel 已 vendor 到 www/vendor，运行时不吃 CDN
+npm run sync:web            # 把 doorplate/door-display.css + lib/scoring-rules.js 同步进 www/
+npx cap sync android        # 同步 Web 资源到 Android 工程
+# 用 Android Studio 打开 android/ 后 Run / Build APK；命令行构建需 JDK 21（17 太低、25 太新）
+```
+
+息屏策略：Web 层 60s 无操作显示黑遮罩，同时调 `DoorplateBridge.sleep()` 把 Activity 亮度降到 0.01；任意触摸/按键唤醒。这是普通 APK 的兼容方案，**不是真正断屏电**——要彻底息屏得接海康设备权限/SDK，路线见 `docs/doorplate-hikvision-dev-roadmap.html`。
+
+> Pages 会把整个仓库（含 `android/`）当静态产物上传，不影响 demo 访问；APK 源码里的 `*.jks` / `local.properties` 已被 `.gitignore` 挡住，别把签名材料提交上来。
 
 ### 本地凭证（macOS Keychain）
 

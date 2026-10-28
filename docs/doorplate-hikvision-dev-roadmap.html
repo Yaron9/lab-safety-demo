@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>海康门禁 APK 人脸识别阶段开发路线书</title>
+  <style>
+    :root {
+      --ink: #162033;
+      --muted: #5d6678;
+      --line: #d8dee8;
+      --soft: #f6f8fb;
+      --soft-2: #eef3f8;
+      --navy: #16325c;
+      --blue: #1e5eb5;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      --sans: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: #fff;
+      line-height: 1.72;
+    }
+    main {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 46px 36px 72px;
+    }
+    header {
+      border-bottom: 3px solid var(--navy);
+      padding-bottom: 26px;
+      margin-bottom: 28px;
+    }
+    .kicker {
+      font-family: var(--mono);
+      color: var(--blue);
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0 0 12px;
+      color: var(--navy);
+      font-size: 34px;
+      line-height: 1.2;
+    }
+    h2 {
+      margin: 42px 0 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--navy);
+      font-size: 24px;
+      line-height: 1.3;
+    }
+    h3 {
+      margin: 24px 0 10px;
+      color: #24344e;
+      font-size: 18px;
+      line-height: 1.35;
+    }
+    p { margin: 8px 0 14px; }
+    a { color: var(--blue); }
+    code, pre { font-family: var(--mono); }
+    code {
+      background: #edf2f7;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-size: .92em;
+    }
+    pre {
+      overflow: auto;
+      margin: 14px 0 20px;
+      padding: 16px;
+      border-radius: 4px;
+      color: #e9eef7;
+      background: #101827;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    ul, ol { margin: 8px 0 16px; padding-left: 24px; }
+    li { margin: 5px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 22px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: var(--soft-2);
+      color: var(--navy);
+      font-weight: 700;
+    }
+    nav {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 18px 20px;
+      margin: 28px 0 34px;
+    }
+    nav h2 {
+      margin: 0 0 10px;
+      padding: 0;
+      border: 0;
+      font-size: 16px;
+    }
+    nav ol {
+      columns: 2;
+      margin: 0;
+    }
+    .subtitle {
+      max-width: 930px;
+      color: var(--muted);
+      font-size: 16px;
+    }
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      margin-top: 22px;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+    .meta div {
+      background: var(--soft);
+      padding: 12px 14px;
+    }
+    .meta b {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .meta span {
+      display: block;
+      margin-top: 4px;
+      font-weight: 700;
+    }
+    .callout {
+      margin: 18px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--blue);
+      background: var(--soft);
+    }
+    .callout.ok { border-left-color: var(--green); }
+    .callout.warn { border-left-color: var(--amber); }
+    .callout.danger { border-left-color: var(--red); }
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 16px 0;
+    }
+    .box {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 14px 16px;
+    }
+    .box h3 { margin-top: 0; }
+    .badge {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 2px 6px;
+      border: 1px solid var(--line);
+      color: var(--navy);
+      background: #fff;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .phase {
+      border: 1px solid var(--line);
+      margin: 22px 0 30px;
+      background: #fff;
+    }
+    .phase-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: baseline;
+      padding: 13px 16px;
+      color: #fff;
+      background: var(--navy);
+    }
+    .phase-head h3 {
+      margin: 0;
+      color: #fff;
+    }
+    .phase-head span {
+      font-family: var(--mono);
+      font-size: 12px;
+      opacity: .88;
+    }
+    .phase-body { padding: 16px; }
+    .phase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .phase-card {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 12px 14px;
+    }
+    .phase-card h4 {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 15px;
+    }
+    .phase-card ul { margin-bottom: 0; }
+    .small {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width: 860px) {
+      main { padding: 30px 18px 48px; }
+      .meta, .split, .phase-grid { grid-template-columns: 1fr; }
+      nav ol { columns: 1; }
+      h1 { font-size: 27px; }
+    }
+    @media print {
+      main { max-width: none; padding: 18mm 15mm; }
+      .phase, table, pre, .box, nav { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="kicker">CUGB Materials Lab Safety Demo · Hikvision Access Terminal</div>
+      <h1>海康门禁 APK 人脸识别阶段开发路线书</h1>
+      <p class="subtitle">
+        本文档用于你与 Codex 协同推进实验室安全 demo 的门禁 APK 功能升级。你负责整体方向、Android 编译、APK 安装、页面渲染检查和海康设备实机调试；Codex 负责按阶段完成代码功能实现、接口封装、状态逻辑、错误处理和可交接说明。
+      </p>
+      <section class="meta" aria-label="文档元信息">
+        <div><b>交付形态</b><span>HTML 路线开发书</span></div>
+        <div><b>开发重心</b><span>按阶段目标推进</span></div>
+        <div><b>Codex 职责</b><span>功能实现与代码修复</span></div>
+        <div><b>你的职责</b><span>编译、渲染、实机验收</span></div>
+      </section>
+    </header>
+
+    <nav>
+      <h2>目录</h2>
+      <ol>
+        <li><a href="#principle">协作原则</a></li>
+        <li><a href="#baseline">项目基线与参考依据</a></li>
+        <li><a href="#target">最终目标体验</a></li>
+        <li><a href="#phases">阶段开发路线</a></li>
+        <li><a href="#interfaces">接口与数据约定</a></li>
+        <li><a href="#handoff">每阶段交接格式</a></li>
+        <li><a href="#risks">风险与决策点</a></li>
+        <li><a href="#prompts">Codex 任务模板</a></li>
+      </ol>
+    </nav>
+
+    <section id="principle">
+      <h2>1. 协作原则</h2>
+      <div class="split">
+        <div class="box">
+          <h3>你负责</h3>
+          <ul>
+            <li>确认演示方向：目标故事线、优先级、是否进入下一阶段。</li>
+            <li>Android 编译：Android Studio、Gradle、JDK、签名、APK 生成。</li>
+            <li>页面渲染调试：浏览器或设备屏幕上的最终观感、布局、交互检查。</li>
+            <li>设备实测：APK 安装、人脸录入、刷脸、开门、logcat 或截图反馈。</li>
+            <li>硬件信息：海康设备型号、系统版本、权限表现、485 接线与协议资料。</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3>Codex 负责</h3>
+          <ul>
+            <li>功能实现：原生 bridge、Web 状态机、mock 授权、错误处理。</li>
+            <li>代码集成：AAR 依赖配置建议、Java 类、manifest 变更、JS 调用封装。</li>
+            <li>问题修复：根据你提供的编译错误、运行日志、屏幕现象做最小必要修改。</li>
+            <li>交接说明：每阶段说明改了什么、你需要怎么编译和怎么测。</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout warn">
+        <strong>重要调整：</strong>Codex 不承担 Android Studio 编译、APK 安装、页面渲染验收和实机操作本身；Codex 只根据你提供的结果迭代代码。这样职责边界更清楚，阶段推进也更稳。
+      </div>
+    </section>
+
+    <section id="baseline">
+      <h2>2. 项目基线与参考依据</h2>
+      <h3>2.1 当前基线</h3>
+      <table>
+        <thead>
+          <tr><th>对象</th><th>现状</th><th>路线中的用途</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>www/index.html</code></td>
+            <td>APK 专用门牌入口，已有识别中、识别成功、识别失败等静态状态。</td>
+            <td>新增 SDK 事件驱动、mock 预约核验、开门结果反馈。</td>
+          </tr>
+          <tr>
+            <td><code>android/app/src/main/java/.../DoorplateBridgePlugin.java</code></td>
+            <td>已有 <code>sleep()</code> / <code>wake()</code> 亮度桥接。</td>
+            <td>继续扩展为海康 SDK 功能桥，或拆分辅助服务类。</td>
+          </tr>
+          <tr>
+            <td><code>03_集成组件</code></td>
+            <td>包含 <code>HikSDK_V1.2.3.aar</code> 与 sources jar。</td>
+            <td>本地 AAR 接入来源。</td>
+          </tr>
+          <tr>
+            <td><code>05_示例代码/ACCESS_DEMO</code></td>
+            <td>海康官方示例，含人脸、人员、开门、485。</td>
+            <td>API 调用和事件码参考，不迁移原生页面。</td>
+          </tr>
+          <tr>
+            <td><code>01_参考文档</code></td>
+            <td>SDK 说明、设备开发指南、485 调试流程。</td>
+            <td>阶段开发依据，尤其是系统权限和串口联调。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2.2 已确认 SDK 依据</h3>
+      <ul>
+        <li>SDK 初始化：<code>IHikManager.init(IHikConfig.createConfig(this).setDeviceType(DeviceType.ACCESS))</code>。</li>
+        <li>开启人脸认证：<code>openAccessVerify(VerifyMethod.FLAG_FACE, VerifyType.verify, false, callback)</code>。</li>
+        <li>不默认使用 <code>VerifyType.verifyAndOpenDoor</code>，因为它会绕过预约核验直接开门。</li>
+        <li>门禁事件监听：<code>IAccessEventListener.onAccessControllerEvent()</code>。</li>
+        <li>事件可读取字段：<code>employeeNoString</code>、<code>name</code>、<code>pictureURL</code>、<code>faceBasemapURL</code>。</li>
+        <li>远程开门：<code>IHikManager.getAccessManager().openDoor(callback)</code>。</li>
+        <li>人员录入：<code>addOrModUser(employeeNo, userName, callback)</code>。</li>
+        <li>人脸采集与添加：<code>captureFace(callback)</code>、<code>addFace(employeeNo, faceUrl, null, callback)</code>。</li>
+        <li>485 调试：参考文档建议排查 <code>/dev/DDM</code>、<code>/dev/ttyS*</code>，示例默认波特率 <code>19200</code>。</li>
+      </ul>
+    </section>
+
+    <section id="target">
+      <h2>3. 最终目标体验</h2>
+      <ol>
+        <li>APK 启动后仍显示全屏电子门牌 kiosk，不破坏现有 10 个演示状态。</li>
+        <li>隐藏菜单增加 SDK 状态、人脸识别启动/停止、演示人脸录入、模拟通过/失败。</li>
+        <li>设备识别到人脸后，原生层把人员编号、姓名和事件码推给 Web。</li>
+        <li>Web 层根据 mock 数据判断：人员是否登记、是否属于 302、培训是否有效、当前是否有已审批预约、实验室是否允许进入。</li>
+        <li>通过时 Web 调用 <code>openDoor()</code> 并显示成功 overlay；失败时不调用开门，显示明确失败原因。</li>
+        <li>后续在开门动作之后，按实机条件接入系统签名或 485/外部门禁协议。</li>
+      </ol>
+      <div class="callout ok">
+        <strong>演示身份策略：</strong>实机可以录入你的真实人脸，但 Web UI 一律展示虚构学生，例如“张一凡 / 材料研24”。真实生物特征只留在设备人员库中，不写入页面文案。
+      </div>
+    </section>
+
+    <section id="phases">
+      <h2>4. 阶段开发路线</h2>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 0 · 基线冻结与可回退演示</h3>
+          <span>目标：保住当前静态 APK</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>明确当前静态 demo 的可用状态，保证后续改坏时能回退。</li>
+                <li>为无 SDK 的浏览器预览保留模拟入口。</li>
+                <li>不改变现有门牌主视觉、隐藏菜单入口和息屏逻辑。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>只做非侵入式准备：梳理入口、标注状态机、补充模拟事件函数。</li>
+                <li>保留 <code>DoorplateBridge.sleep/wake</code> 原行为。</li>
+                <li>如需加调试 UI，只放在右上角五连击隐藏菜单内。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>README.md</code> 的 APK 专用入口说明。</li>
+                <li><code>www/index.html</code> 中现有 <code>SCENES</code>、<code>scan/success/fail</code> 状态。</li>
+                <li><code>DoorplateBridgePlugin.java</code> 的现有 bridge 写法。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你打开页面后，10 个状态仍可切换。</li>
+                <li>无 Capacitor/无 SDK 时，模拟通过和模拟失败不报错。</li>
+                <li>没有引入真实数据，没有破坏门牌视觉节奏。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>用浏览器或设备检查页面渲染；确认当前版本可作为回退基线。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 1 · 海康 SDK 接入与状态探针</h3>
+          <span>目标：能初始化 SDK 并向 Web 报告状态</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>将海康 AAR 纳入 Android 工程依赖。</li>
+                <li>应用启动时初始化 SDK。</li>
+                <li>提供 <code>getHikStatus()</code> 给 Web 隐藏菜单查看。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>新增 <code>android/app/libs/HikSDK_V1.2.3.aar</code> 或配置引用路径。</li>
+                <li>调整 <code>android/app/build.gradle</code>，加入 AAR、Gson、XStream 依赖。</li>
+                <li>新增 <code>DoorplateApplication</code> 调用 <code>IHikManager.init()</code>。</li>
+                <li>扩展 bridge：<code>getHikStatus()</code> 返回 <code>initialized/sdkAvailable/lastError</code>。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>05_示例代码/ACCESS_DEMO/DemoApplication.java</code>。</li>
+                <li><code>05_示例代码/ACCESS_DEMO/app/build.gradle</code>。</li>
+                <li><code>01_参考文档/门禁设备SDK说明文档.docx</code> 的 SDK 集成说明。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你能完成 Android 编译或把编译错误贴回给 Codex。</li>
+                <li>APK 启动不闪退。</li>
+                <li>隐藏菜单能显示 SDK 初始化成功或失败原因。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>执行 Android Studio 编译、安装 APK、检查隐藏菜单状态；Codex 根据错误日志修复代码。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 2 · 人脸认证事件桥接</h3>
+          <span>目标：刷脸事件能进入 Web</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>Web 可以启动/停止人脸认证。</li>
+                <li>原生监听到人脸认证通过、失败、识别失败、真人检测失败。</li>
+                <li>事件通过 Capacitor listener 推给 Web。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>实现 <code>startFaceVerify()</code>，调用 <code>VerifyType.verify</code>。</li>
+                <li>实现 <code>stopFaceVerify()</code>，关闭认证并移除监听。</li>
+                <li>封装 <code>faceVerifyEvent</code>，包含 <code>employeeNo/name/subEventType/raw</code>。</li>
+                <li>Web 侧先只把事件映射到识别中、成功、失败三类状态。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>FaceIdentityActivity.java</code> 的 <code>openAccessVerify</code> 与事件监听。</li>
+                <li><code>AccessControllerEventBean.java</code> 的 <code>employeeNoString</code> 字段。</li>
+                <li><code>AcsEventMinor</code> 中的人脸事件码。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你点击“启动识别”后，门牌显示识别中。</li>
+                <li>实机刷脸后，Web 能收到事件并显示人员编号或失败原因。</li>
+                <li>此阶段不调用 <code>openDoor()</code>。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>实机刷脸，记录屏幕表现和 logcat；如果事件字段为空，把原始事件贴回给 Codex。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 3 · 演示人脸录入</h3>
+          <span>目标：把你的脸绑定到虚构学生编号</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>在隐藏菜单里一键录入演示人脸。</li>
+                <li>设备人员库中保存 <code>employeeNo=p-face-demo</code>。</li>
+                <li>再次刷脸时，事件能返回同一编号。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>实现 <code>enrollDemoFace({ employeeNo, name })</code>。</li>
+                <li>流程固定为 <code>addOrModUser()</code> -> <code>captureFace()</code> -> <code>addFace()</code>。</li>
+                <li>将返回的 <code>faceUrl</code> 和错误信息传给 Web 调试区。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>AddPersonnelActivity.java</code> 的 <code>addOrModUser</code>。</li>
+                <li><code>AddFaceActivity.java</code> 的 <code>captureFace/addFace</code>。</li>
+                <li><code>FaceManageActivity.java</code> 的人脸管理流程。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你能在设备上完成录入动作。</li>
+                <li>录入失败时，页面显示 SDK 返回的错误。</li>
+                <li>录入成功后刷脸，事件返回 <code>p-face-demo</code>。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>站在设备前录入人脸；确认设备采集条件、光线、距离和错误提示。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 4 · Mock 预约核验</h3>
+          <span>目标：识别出人后先判断能不能进</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>将设备返回的 <code>employeeNo</code> 映射到虚构学生。</li>
+                <li>按登记、实验室权限、培训、预约、实验室状态顺序判断。</li>
+                <li>每个失败分支都有明确文案。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>新增 <code>DOOR_ACCESS</code> mock 数据。</li>
+                <li>实现 <code>authorizeFaceEvent(event)</code>。</li>
+                <li>成功 overlay 动态显示姓名、身份、预约时间。</li>
+                <li>失败 overlay 动态显示“未登记 / 无权限 / 培训过期 / 无预约 / 实验室不可进入”。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>admin/mock.js</code> 中人员、项目、实验室 mock。</li>
+                <li><code>mp-demo/page-student.jsx</code> 中预约故事线。</li>
+                <li><code>www/index.html</code> 中现有 success/fail overlay。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你切换 mock 为有效预约时，页面显示允许进入。</li>
+                <li>你切换 mock 为无预约或培训失效时，页面拒绝进入。</li>
+                <li>此阶段仍不要求真实开门动作。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>检查页面文案、失败原因、人物名称是否符合演示口径；确认没有真实个人信息。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 5 · 显式开门联动</h3>
+          <span>目标：预约通过后才调用开门</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>只有阶段 4 核验通过，才调用 <code>openDoor()</code>。</li>
+                <li>开门成功和失败都回传 Web。</li>
+                <li>开门失败时覆盖成功 overlay，避免误导演示。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>实现 bridge 方法 <code>openDoor()</code>。</li>
+                <li>Web 侧在 <code>authorizeFaceEvent()</code> 通过后调用。</li>
+                <li>保存最近一次开门结果到隐藏菜单调试区。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>AccessControlActivity.java</code> 的 <code>IHikManager.getAccessManager().openDoor()</code>。</li>
+                <li><code>AcsEventMinor.MINOR_REMOTE_OPEN_DOOR</code> 可作为事件参考。</li>
+                <li>阶段 4 的授权结果。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>有预约时，你能观察到门锁动作或 SDK 成功回调。</li>
+                <li>无预约时，logcat 和页面都不能出现 <code>openDoor()</code> 成功调用。</li>
+                <li>普通 APK 若权限不足，错误清楚显示，进入阶段 6 决策。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>实机确认门锁是否动作；如失败，提供错误码、logcat 和是否需要系统签名的判断。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 6 · 系统签名可选分支</h3>
+          <span>目标：解决普通 APK 权限不足</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>仅在普通 APK 明确无法调用 SDK 能力时进入。</li>
+                <li>建立系统签名构建分支或配置，不影响普通 APK 回退。</li>
+                <li>验证初始化、人脸采集、开门等权限能力是否恢复。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>配置 signingConfig，引用 <code>04_系统签名/system_key.jks</code>。</li>
+                <li>按需评估 <code>android:sharedUserId="android.uid.system"</code> 的兼容影响。</li>
+                <li>保留普通 APK 配置，避免单一路径锁死。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>04_系统签名/readme.md</code>。</li>
+                <li>海康 demo manifest 中的 <code>android.uid.system</code>。</li>
+                <li>你在阶段 1-5 收集的权限错误。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你能编出系统签名 APK 并安装到设备。</li>
+                <li>原权限错误消失，或确认不是签名问题。</li>
+                <li>普通 APK 构建路径仍保留。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>负责签名构建、安装和权限验证；Codex 根据结果调整配置。</p>
+        </div>
+      </article>
+
+      <article class="phase">
+        <div class="phase-head">
+          <h3>阶段 7 · 485 / 门禁协议后续联调</h3>
+          <span>目标：接入外部门禁协议或串口控制</span>
+        </div>
+        <div class="phase-body">
+          <div class="phase-grid">
+            <div class="phase-card">
+              <h4>开发目标</h4>
+              <ul>
+                <li>在 SDK 开门之外，预留 485 串口协议路径。</li>
+                <li>能初始化串口、发送数据、接收反馈。</li>
+                <li>协议帧明确后，将开门动作扩展为可选 485 指令。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>Codex 开发内容</h4>
+              <ul>
+                <li>实现 <code>init485({ port, baudRate })</code>、<code>send485(data)</code>、<code>start485Receive()</code>。</li>
+                <li>将串口收发结果写入隐藏菜单调试区。</li>
+                <li>不擅自定义真实协议帧，只按你提供的帧格式实现。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>参考依据</h4>
+              <ul>
+                <li><code>01_参考文档/485调试流程说明.docx</code>。</li>
+                <li><code>SerialPortActivity.java</code>。</li>
+                <li>候选节点：<code>/dev/DDM/tty_rs485_1</code>、<code>/dev/ttyS0</code>。</li>
+              </ul>
+            </div>
+            <div class="phase-card">
+              <h4>验收标准</h4>
+              <ul>
+                <li>你能确认串口节点和波特率。</li>
+                <li>发送测试帧有可解释反馈，或日志能定位节点/权限/波特率问题。</li>
+                <li>真实开门帧只在协议确认后加入。</li>
+              </ul>
+            </div>
+          </div>
+          <p><span class="badge">你的动作</span>提供接线、节点、波特率、协议帧和设备反馈；Codex 负责把这些信息落到 bridge 实现中。</p>
+        </div>
+      </article>
+    </section>
+
+    <section id="interfaces">
+      <h2>5. 接口与数据约定</h2>
+      <h3>5.1 Web 调原生接口</h3>
+      <table>
+        <thead>
+          <tr><th>方法</th><th>用途</th><th>阶段</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>getHikStatus()</code></td><td>读取 SDK 初始化状态和最近错误。</td><td>阶段 1</td></tr>
+          <tr><td><code>startFaceVerify()</code></td><td>开启仅认证、不自动开门的人脸识别。</td><td>阶段 2</td></tr>
+          <tr><td><code>stopFaceVerify()</code></td><td>关闭人脸认证并释放监听。</td><td>阶段 2</td></tr>
+          <tr><td><code>enrollDemoFace({ employeeNo, name })</code></td><td>录入演示人脸。</td><td>阶段 3</td></tr>
+          <tr><td><code>openDoor()</code></td><td>授权通过后显式开门。</td><td>阶段 5</td></tr>
+          <tr><td><code>init485/send485/start485Receive</code></td><td>485 串口预留。</td><td>阶段 7</td></tr>
+        </tbody>
+      </table>
+
+      <h3>5.2 人脸事件 payload</h3>
+      <pre><code>{
+  "status": "pass | fail | error",
+  "employeeNo": "p-face-demo",
+  "name": "张一凡",
+  "subEventType": 75,
+  "eventDescription": "face verify pass",
+  "occurredAt": "2026-06-15T14:30:00+08:00",
+  "pictureURL": "...",
+  "faceBasemapURL": "...",
+  "raw": "compact debug json"
+}</code></pre>
+
+      <h3>5.3 Mock 授权数据</h3>
+      <pre><code>const DOOR_ACCESS = {
+  labId: '302',
+  deviceEmployeeMap: { 'p-face-demo': 'p-demo-zhang' },
+  people: {
+    'p-demo-zhang': {
+      employeeNo: 'p-face-demo',
+      name: '张一凡',
+      role: '学生',
+      dept: '材料研24',
+      training: 'valid',
+      labs: ['302']
+    }
+  },
+  appointments: [
+    {
+      id: 'door-book-302-001',
+      personId: 'p-demo-zhang',
+      labId: '302',
+      date: '2026-04-21',
+      start: '14:00',
+      end: '17:00',
+      status: 'approved'
+    }
+  ]
+};</code></pre>
+    </section>
+
+    <section id="handoff">
+      <h2>6. 每阶段交接格式</h2>
+      <p>Codex 每完成一个阶段，应给你以下信息，方便你编译、安装、渲染和实机验证。</p>
+      <table>
+        <thead>
+          <tr><th>交接项</th><th>内容</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>完成范围</td><td>本阶段实现了哪些方法、页面状态或 mock 逻辑。</td></tr>
+          <tr><td>变更文件</td><td>列出主要修改文件，避免长篇逐行说明。</td></tr>
+          <tr><td>你需要做什么</td><td>明确告诉你要编译、安装、点击哪个入口、录什么日志。</td></tr>
+          <tr><td>预期表现</td><td>屏幕应该出现什么、隐藏菜单应该显示什么、事件应该返回什么。</td></tr>
+          <tr><td>失败时反馈</td><td>需要你贴回的 logcat 关键词、截图、设备型号或错误码。</td></tr>
+          <tr><td>下一阶段条件</td><td>满足什么现象才能进入下一阶段。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="risks">
+      <h2>7. 风险与决策点</h2>
+      <table>
+        <thead>
+          <tr><th>风险</th><th>触发阶段</th><th>表现</th><th>处理</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>普通 APK 权限不足</td>
+            <td>阶段 1-5</td>
+            <td>SDK 初始化、采集或开门报权限错误。</td>
+            <td>你提供错误日志；Codex 进入阶段 6 配置系统签名分支。</td>
+          </tr>
+          <tr>
+            <td>事件不返回人员编号</td>
+            <td>阶段 2</td>
+            <td>只有通过/失败，没有 <code>employeeNoString</code>。</td>
+            <td>先读取 <code>name/cardNo/pictureURL</code>；必要时改为扫码 + 人脸二次核验。</td>
+          </tr>
+          <tr>
+            <td><code>VerifyType.verify</code> 不触发识别</td>
+            <td>阶段 2</td>
+            <td>调用成功但设备无识别动作。</td>
+            <td>尝试配置 <code>VerifyMode.FACE</code>；仅为验证硬件链路时临时测试 <code>verifyAndOpenDoor</code>。</td>
+          </tr>
+          <tr>
+            <td>页面显示成功但开门失败</td>
+            <td>阶段 5</td>
+            <td>UI 欢迎进入，但门锁没动作。</td>
+            <td>开门回调必须覆盖 UI；成功 overlay 只在开门成功后展示。</td>
+          </tr>
+          <tr>
+            <td>485 节点不确定</td>
+            <td>阶段 7</td>
+            <td>发送无响应或权限错误。</td>
+            <td>你按设备排查节点和接线；Codex 只负责把确认后的节点和协议落代码。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="prompts">
+      <h2>8. Codex 任务模板</h2>
+      <h3>阶段任务模板</h3>
+      <pre><code>请按 docs/doorplate-hikvision-dev-roadmap.html 的【阶段 X】开发。
+注意分工：你只负责代码功能实现和必要说明；Android 编译、页面渲染调试、APK 安装和实机测试由我来做。
+完成后请交付：
+1. 改了哪些文件；
+2. 我需要如何编译/安装/点击验证；
+3. 预期现象；
+4. 如果失败，我需要贴回哪些日志或截图。</code></pre>
+
+      <h3>阶段 1 示例</h3>
+      <pre><code>请实现阶段 1：海康 SDK 接入与状态探针。
+目标是让 Android 工程接入 HikSDK_V1.2.3.aar，应用启动时初始化 IHikManager，并让 Web 隐藏菜单可调用 getHikStatus()。
+不要处理页面渲染和实机编译，我会编译并反馈错误。</code></pre>
+
+      <h3>实机日志修复模板</h3>
+      <pre><code>这是我实机编译/安装/刷脸后的日志和现象：[粘贴日志]
+请判断属于哪个阶段的问题，只做最小必要代码修改。
+不要跳阶段，不要引入真实后端，不要改门牌整体视觉。</code></pre>
+    </section>
+
+    <footer class="small">
+      <p>本路线书仅用于演示项目。真实门禁、真实人员、真实生产数据接入前，需要重新设计身份、权限、审计、隐私、失败兜底和安全策略。</p>
+    </footer>
+  </main>
+</body>
+</html>

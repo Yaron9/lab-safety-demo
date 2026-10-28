@@ -48,6 +48,30 @@
 
 含实验室名 + 状态徽章 + 责任人电话 + 危险类别 + 在场人员 + 实时危化品台账 + QR 扫码 + 人脸识别取景框 + 底部 PERIOD POINTS 仪表带（当前 6 月记分周期累积扣分）。
 
+### 电子门牌 APK（Capacitor）
+
+APK 只打包电子门牌端，不包含 `/admin/` 与 `/mp-demo/`：
+
+- `doorplate/index.html`：Web 预览页，保留状态切换工具栏、自动轮播与设备外框，方便浏览器验收 10 个状态。
+- `www/index.html`：APK 专用入口，启动后只显示全屏门牌 kiosk 内容。
+- `www/vendor/`：本地化 React / ReactDOM / Babel，避免 APK 运行时依赖 unpkg CDN。
+- `android/`：Capacitor Android 工程；原生亮度桥接在 `android/app/src/main/java/cn/edu/cugb/materials/doorplate/DoorplateBridgePlugin.java`。
+
+APK 演示操作：
+
+- 默认全屏显示电子门牌。
+- 右上角连续点击 5 次，打开隐藏状态菜单。
+- 支持 `free` / `busy` / `high` / `rect` / `closed` / `scan` / `success` / `fail` / `alert` / `inspect` 10 个状态。
+- 选择状态后立即切换，并持久化到 `localStorage.dd-scene`。
+- URL 调试支持 `?scene=alert` 指定状态，`?mode=inspect` 进入检查模式。
+
+APK 息屏策略（面向海康威视门禁终端试装）：
+
+- 1 分钟无触摸 / 点击 / 按键 / 移动后，Web 层显示全黑遮罩。
+- 同时调用原生 `DoorplateBridge.sleep()`，将当前 Activity 亮度降到最低。
+- 任意触摸 / 点击 / 按键 / 移动会调用 `DoorplateBridge.wake()`，恢复亮度并回到门牌。
+- 这是普通 APK 兼容方案；真正关闭屏幕电源仍需后续结合海康设备权限、设备管理员模式或厂商 SDK 实测。
+
 ## 数据基准与单一来源
 
 - 三端 mock 同步到 `today: '2026-04-21'`（admin/mp-demo/doorplate）。
@@ -57,3 +81,11 @@
 ## 技术栈
 
 React 18 UMD + Babel standalone + 单一 styles.css，无构建工具。Portal 是纯 HTML/CSS，无 JS。三端共享 `lib/scoring-rules.js`。
+
+APK 打包补充：
+
+- 根目录 `package.json` / `capacitor.config.json` 管理 Capacitor。
+- `www/` 是 APK Web 资源目录，不要在 `/doorplate/` 下运行 Capacitor。
+- 同步 Android 资源：`npx cap sync android`。
+- 构建与调试：用 Android Studio 打开 `android/` 后 Run / Build APK。
+- 命令行构建需 JDK 21；JDK 17 太低，JDK 25 对当前 Gradle / Android Gradle Plugin 组合过新。
