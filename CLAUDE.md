@@ -21,7 +21,7 @@
 
 `admin/mock.js` 是 admin 唯一数据源；`mp-demo/mock.js` 是小程序自己的；门牌的 LAB/SCENES 内联在 `doorplate/index.html` 里。三端 `today` 必须同步到 `'2026-04-21'`（已是当前基准）。
 
-> Portal 存在的原因：EdgeOne 国内默认域名是 3 小时 token 预览链接，给甲方一个唯一入口最干净。Cookie 落到 `*.edgeone.cool` 域名后，三端在 3 小时内任意切换都不用重新认证。
+> Portal 存在的原因：给甲方一个永久唯一入口最干净，省得记 4 个 URL。三端 cookie 落到同一域名后任意切换都不重新认证。
 
 ## 硬约束（违反会被骂）
 
@@ -42,14 +42,25 @@ GitHub repo: https://github.com/Yaron9/lab-safety-demo
 
 | 镜像 | 角色 | URL | 触发 |
 |---|---|---|---|
-| GitHub Pages | 海外兜底（永久保留） | https://yaron9.github.io/lab-safety-demo/ | `.github/workflows/pages.yml` ~17s |
-| EdgeOne Pages | **国内主力 · 演示前手动跑** | `https://lab-safety-demo-<slug>.edgeone.cool?eo_token=...&eo_time=...`（每次部署新 URL · 3 小时窗口） | `.github/workflows/edgeone.yml` push 触发；演示前本地手跑 `npx edgeone pages deploy` 拿新预览 URL |
+| **GitHub Pages** | **主力 · 国内/海外均可访问**（永久 URL） | https://yaron9.github.io/lab-safety-demo/ | `.github/workflows/pages.yml` push 自动 ~17s |
+| EdgeOne Pages | 备份 · 国内加速 / 海外节点备用 | `https://lab-safety-demo-<slug>.edgeone.cool?eo_token=...&eo_time=...`（3 小时窗口） | `.github/workflows/edgeone.yml` push 自动；演示前可选手跑 |
 
-**国内只能走 EdgeOne 预览链接**——GitHub Pages 默认域名被 GFW 处理；EdgeOne 国内合规要求默认域名只发 3 小时 token 链接（不绑自定义域名 + 备案就这样）。完整运维步骤、演示前 SOP、回滚见 [docs/deploy-mirror.md](docs/deploy-mirror.md)。
+**默认演示走 GitHub Pages 永久 URL**（2026-05 起经用户验证，国内主流城市/运营商正常访问）。EdgeOne 保留作为兜底——GitHub Actions 故障、Pages 缓存未更新、或国内某网段临时受限时使用。完整运维步骤、备份切换、回滚见 [docs/deploy-mirror.md](docs/deploy-mirror.md)。
 
-### 给甲方拿新 URL（用户说"拿新链接 / 重新部署 / 演示前 / 给甲方"时直接跑，不要问）
+### 给甲方发演示链接（默认）
 
-凭证已在 macOS Keychain（`-s tencent-cloud-cli -a EDGEONE_API_TOKEN`），以下命令一气呵成：
+直接发：`https://yaron9.github.io/lab-safety-demo/`
+
+CI 每次 push 主分支 ~17s 自动部署，无需手动操作。验证：
+
+```sh
+curl -sI https://yaron9.github.io/lab-safety-demo/ | head -1   # 200 即可
+gh run list -R Yaron9/lab-safety-demo --workflow=pages.yml --limit 1
+```
+
+### EdgeOne 兜底链接（备用，按需手动跑）
+
+只在 GitHub Pages 不可用或用户明确要求 EdgeOne 备份链接时跑。凭证在 macOS Keychain：
 
 ```sh
 cd /Users/yaron/AGI/lab-safety-demo && \
@@ -57,7 +68,7 @@ cd /Users/yaron/AGI/lab-safety-demo && \
   yes "" | npx -y edgeone pages deploy . -n lab-safety-demo -t "$TOKEN" -e production -a global 2>&1 | tail -5
 ```
 
-输出末尾的 `EDGEONE_DEPLOY_URL=https://lab-safety-demo-XXXXXXXX.edgeone.cool?eo_token=...&eo_time=...` 就是新链接（带完整 query string，3 小时窗口）。直接发给用户，让他转给甲方/打二维码。
+输出末尾的 `EDGEONE_DEPLOY_URL=https://lab-safety-demo-XXXXXXXX.edgeone.cool?eo_token=...&eo_time=...` 是 3 小时窗口的备用链接。
 
 ### 本地凭证（macOS Keychain）
 

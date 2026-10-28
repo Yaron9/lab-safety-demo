@@ -2,16 +2,29 @@
 
 ## 部署矩阵
 
-| 镜像 | URL 形态 | 用途 | 触发 |
+| 镜像 | URL 形态 | 角色 | 触发 |
 |---|---|---|---|
-| **GitHub Pages**（兜底，永久保留） | https://yaron9.github.io/lab-safety-demo/ | 海外访问；EdgeOne 故障时甲方退路 | `.github/workflows/pages.yml` push 到 main，~17s |
-| **EdgeOne Pages**（国内主力 · 演示前手动跑） | `https://lab-safety-demo-<slug>.edgeone.cool?eo_token=...&eo_time=...`（每次部署新 URL · 3 小时窗口） | 国内甲方演示 | `.github/workflows/edgeone.yml` push 触发；**演示前本地再手跑一次** 拿到鲜活 URL |
+| **GitHub Pages**（主力 · 永久 URL） | https://yaron9.github.io/lab-safety-demo/ | **默认演示入口** · 国内/海外均可访问 | `.github/workflows/pages.yml` push 到 main，~17s |
+| EdgeOne Pages（备份镜像） | `https://lab-safety-demo-<slug>.edgeone.cool?eo_token=...&eo_time=...`（3 小时窗口） | GitHub Pages 故障 / 国内某网段临时受限时切换 | `.github/workflows/edgeone.yml` push 自动；需要新 URL 时本地手跑 |
 
-两份产物完全一致（仓库根目录原样发布），portal `/` + 三端 `/admin/` `/mp-demo/` `/doorplate/` 共用同一个 cookie，从 portal 点进去任何一端在 3 小时内都不重新认证。
+两份产物完全一致（仓库根目录原样发布），portal `/` + 三端 `/admin/` `/mp-demo/` `/doorplate/` 共用同一个 cookie，从 portal 点进任何一端都不用重新认证。
 
-## 演示前重新部署（30 秒 SOP）
+**部署历史背景**：项目早期国内访问 GitHub Pages 不稳定，曾以 EdgeOne 为主力 + 演示前手动重发 URL。2026-05 经用户验证 GitHub Pages 默认域名在国内主流网络已可访问，主备关系翻转至当前状态。EdgeOne SOP 保留作为故障兜底。
 
-EdgeOne 国内默认域名是 3 小时合规预览链接 —— 每次给甲方演示前重新跑一次 deploy 拿新 URL：
+## 默认演示链接（甲方拿到的那个）
+
+直接发：`https://yaron9.github.io/lab-safety-demo/`
+
+push 主分支 ~17s CI 自动发布，无需任何手动操作。验证：
+
+```sh
+curl -sI https://yaron9.github.io/lab-safety-demo/ | head -1     # 应返回 200
+gh run list -R Yaron9/lab-safety-demo --workflow=pages.yml --limit 1
+```
+
+## EdgeOne 兜底链接（按需重新部署 · 30 秒 SOP）
+
+**何时跑**：GitHub Pages 出现 404 / CI 卡住 / 用户报某网段访问 yaron9.github.io 不稳定。**正常演示不需要跑**。
 
 ```sh
 cd /Users/yaron/AGI/lab-safety-demo
@@ -24,7 +37,7 @@ yes "" | npx -y edgeone pages deploy . -n lab-safety-demo -t "$TOKEN" -e product
 EDGEONE_DEPLOY_URL=https://lab-safety-demo-XXXXXXXX.edgeone.cool?eo_token=...&eo_time=...
 ```
 
-把这个完整 URL（必须含 `?eo_token=...&eo_time=...` query string）发给甲方 / 打成二维码即可。第一次访问会落 cookie，之后 3 小时内甲方在 portal 上点任何一端都直接通。
+把这个完整 URL（必须含 `?eo_token=...&eo_time=...` query string）发给甲方 / 打成二维码即可。第一次访问会落 cookie，之后 3 小时内在 portal 上点任何一端都直接通。3 小时窗口过期后需要重跑 deploy 拿新 URL。
 
 ## 首次开通（已完成，做记录）
 
@@ -50,7 +63,7 @@ gh run list -R Yaron9/lab-safety-demo --workflow=edgeone.yml --limit 1
 # EdgeOne 历史部署列表（含每次的预览 URL）也在 EdgeOne 控制台 Deployments 页
 ```
 
-> **注意**：push 触发的 EdgeOne 自动部署也会生成新预览 URL，但只在 GitHub Action 日志里能看到，不会自动通知甲方。**演示前一定要本地再手跑一次** —— 这样可以从终端立刻拿到 URL，且时间戳是新的（3 小时窗口从这一刻起算）。
+> **注意**：push 触发的 EdgeOne 自动部署生成的预览 URL 只在 GitHub Action 日志里能看到，不会自动通知。如果当下确实要切到 EdgeOne 备份，本地再手跑一次最快——直接从终端拿 URL 且 3 小时窗口从这一刻起算。
 
 ## 凭据放哪
 
@@ -64,9 +77,10 @@ gh run list -R Yaron9/lab-safety-demo --workflow=edgeone.yml --limit 1
 
 ## 故障回滚
 
-1. **EdgeOne 部署失败/挂了** → 给甲方 GitHub Pages URL 当备用（如果他能科学上网）；或者换一个时间点重跑 deploy。EdgeOne 控制台 Deployments 页可以一键回滚到上一个 production 部署。
-2. **代码本身写坏** → `git revert <bad-sha> && git push`，两处同时回滚。
-3. **EdgeOne 长期出大故障** → 不动 workflow，临时改 README 把"国内主力"行换成"暂用 GitHub Pages 兜底"；同时考虑加 Cloudflare Pages 作为第二镜像（不在本仓库当前部署中）。
+1. **GitHub Pages 故障 / Action 卡住** → 跑上面的 EdgeOne 兜底 SOP 拿一个 3 小时备份 URL 发甲方，同时 `gh run list --workflow=pages.yml --limit 5` 查 CI 状态。
+2. **代码本身写坏** → `git revert <bad-sha> && git push`，两处镜像同时回滚。
+3. **国内某网段访问 yaron9.github.io 不稳** → 同上切到 EdgeOne 兜底 URL；如长期不稳，再回去把部署矩阵的主备角色翻回来。
+4. **EdgeOne 也挂了** → 单 GitHub Pages 继续撑；同时考虑加 Cloudflare Pages 作为第二镜像（不在本仓库当前部署中）。
 
 ## 凭据轮换 / 撤销
 
@@ -84,7 +98,8 @@ security delete-generic-password -a TENCENTCLOUD_SECRET_KEY -s tencent-cloud-cli
 
 ## 别做的
 
-- 不要替换 `.github/workflows/pages.yml`，GitHub Pages 是兜底，永远保留。
-- 不要在 EdgeOne 国内版上绑自定义域名（要 ICP 备案）。当前的「3 小时 portal + cookie 全域」方案对 demo 场景完全够用。
+- 不要替换 `.github/workflows/pages.yml`，GitHub Pages 是主力镜像，永远保留。
+- 不要删 EdgeOne workflow / 凭证 —— 国内访问 yaron9.github.io 的可用性观察期内保留兜底；至少观察到 2026 年底再评估是否退役。
+- 不要在 EdgeOne 国内版上绑自定义域名（要 ICP 备案）。3 小时窗口预览 URL 作为应急兜底完全够用。
 - 不要把 EdgeOne API Token 写进任何 commit、CLAUDE.md、README 或文档示例——只通过 keychain / GitHub Secret 引用。
 - 不要把 portal 的 `/` 改回 admin —— portal 是给甲方第一眼看的简洁入口，admin 留在 `/admin/`。

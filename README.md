@@ -15,10 +15,10 @@
 
 | 用途 | URL |
 |---|---|
-| **国内访问 · 主推**（每次演示前重新部署、3 小时窗口） | 见 `docs/deploy-mirror.md` 的「演示前重新部署」流程 |
-| **海外 / 兜底**（永久） | https://yaron9.github.io/lab-safety-demo/ |
+| **主推**（国内 / 海外均可，永久稳定） | https://yaron9.github.io/lab-safety-demo/ |
+| 兜底（GitHub Pages 故障 / 临时网段问题时切换） | EdgeOne Pages 预览链接（3 小时窗口，按需手跑 — 见 `docs/deploy-mirror.md`） |
 
-> 国内默认走 EdgeOne Pages 的 `*.edgeone.cool` 预览链接（带 `eo_token`，3 小时合规窗口）。每次演示前跑一次 `npx edgeone pages deploy` 即拿到新 URL。三端共用同一个 cookie，从 portal 点进去任意端都不用重新认证。GitHub Pages 在国内打不开但海外稳定，是兜底备份。
+> 经 2026-05 验证，GitHub Pages 默认域名在国内主流网络可正常访问，且 push 主分支自动部署到永久 URL，最适合做甲方演示的统一入口。EdgeOne 保留作为备份镜像 —— GitHub Pages 故障或国内某网段临时受限时手动跑一次即可切换。三端共用 cookie，portal 点进任意端都不用重新认证。
 
 ## 各端能力
 
